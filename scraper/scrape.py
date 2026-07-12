@@ -11,24 +11,35 @@ LIST_URL = BASE_URL + "/portal/notice/realestate/RealNoticeList.work"
 VIEW_URL = BASE_URL + "/portal/notice/realestate/RealNoticeView.work"
 
 HEADERS = {
-    "User-Agent": (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/124.0.0.0 Safari/537.36"
-    ),
-    "Referer": BASE_URL,
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+    "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Connection": "keep-alive",
+    "Upgrade-Insecure-Requests": "1",
 }
 
 KST = timezone(timedelta(hours=9))
 
+session = requests.Session()
+session.headers.update(HEADERS)
+
 
 def fetch(url, params=None, encoding="euc-kr"):
-    resp = requests.get(url, params=params, headers=HEADERS, timeout=15)
-    resp.encoding = encoding
-    return BeautifulSoup(resp.text, "html.parser")
+    for attempt in range(3):
+        try:
+            resp = session.get(url, params=params, timeout=30)
+            resp.encoding = encoding
+            return BeautifulSoup(resp.text, "html.parser")
+        except Exception as e:
+            print(f"  재시도 {attempt+1}/3: {e}")
+            time.sleep(5)
+    return None
 
 
 def get_total_pages(soup):
+    if not soup:
+        return 1
     last = soup.select_one('a[title="마지막 페이지"]')
     if last:
         href = last.get("href", "")
@@ -45,6 +56,8 @@ def get_total_pages(soup):
 
 
 def parse_list_page(soup):
+    if not soup:
+        return []
     rows = soup.select("table tbody tr")
     items = []
     for row in rows:
@@ -92,10 +105,8 @@ def parse_detail_page(seq_id, page_index=1):
         "searchWord": "",
         "searchOption": "",
     }
-    try:
-        soup = fetch(VIEW_URL, params=params)
-    except Exception as e:
-        print(f"  상세 페이지 오류 (seq_id={seq_id}): {e}")
+    soup = fetch(VIEW_URL, params=params)
+    if not soup:
         return {}
 
     result = {"phone": "", "end_date": "", "files": []}
@@ -179,8 +190,16 @@ def scrape_all():
     print("대법원 자산매각 공고 스크래핑 시작")
     print("=" * 50)
 
+    # 먼저 메인 페이지 방문해서 세션 쿠키 획득
+    print("\n세션 초기화 중...")
+    session.get(BASE_URL + "/portal/main.jsp", timeout=30)
+    time.sleep(2)
+
     print("\n[1단계] 전체 페이지 수 확인...")
     soup1 = fetch(LIST_URL, params={"pageIndex": 1})
+    if not soup1:
+        print("첫 페이지 로드 실패!")
+        return
     total_pages = get_total_pages(soup1)
     print(f"  총 {total_pages}페이지")
 
@@ -193,12 +212,8 @@ def scrape_all():
         if page == 1:
             soup = soup1
         else:
-            try:
-                soup = fetch(LIST_URL, params={"pageIndex": page})
-                time.sleep(0.8)
-            except Exception as e:
-                print(f"  오류 (page {page}): {e}")
-                continue
+            soup = fetch(LIST_URL, params={"pageIndex": page})
+            time.sleep(1)
 
         items = parse_list_page(soup)
         for item in items:
@@ -215,7 +230,7 @@ def scrape_all():
         item.update(detail)
         item["cat"] = categorize(item["title"], item["agency"])
         item["detail_url"] = f"{VIEW_URL}?pageIndex=1&seq_id={item['seq_id']}&bub_cd=&searchWord=&searchOption="
-        time.sleep(0.5)
+        time.sleep(0.8)
 
     now_kst = datetime.now(KST)
     output = {
