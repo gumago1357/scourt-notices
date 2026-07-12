@@ -9,6 +9,7 @@ from datetime import datetime, timezone, timedelta
 BASE_URL = "https://www.scourt.go.kr"
 LIST_URL = BASE_URL + "/portal/notice/realestate/RealNoticeList.work"
 VIEW_URL = BASE_URL + "/portal/notice/realestate/RealNoticeView.work"
+FILE_BASE_URL = BASE_URL + "/upload/notice/realestate/"
 
 PROXY_URL = "https://scourt-proxy.gumago1357.workers.dev"
 
@@ -78,13 +79,10 @@ def parse_list_page(soup):
             continue
         seq_id = m.group(1)
 
-        # 날짜와 조회수 파싱 - 컬럼 수에 따라 처리
         date = ""
         attach_count = 0
         if len(cols) >= 6:
-            # 번호 / 법원 / 기관 / 제목 / 날짜 / 첨부
             date_text = cols[4].get_text(strip=True)
-            # 날짜 형식 확인 (2026.06.19 같은 형식)
             if re.match(r"\d{4}\.\d{2}\.\d{2}", date_text):
                 date = date_text
             m2 = re.search(r"\d+", cols[5].get_text(strip=True))
@@ -119,53 +117,73 @@ def parse_detail_page(seq_id, page_index=1):
     if not soup:
         return {}
 
-    result = {"phone": "", "end_date": "", "files": []}
+    result = {"phone": "", "end_date": "", "date": "", "files": []}
 
-    info_table = None
+    # 상세 페이지 테이블에서 정보 파싱
     for tbl in soup.find_all("table"):
-        tds = tbl.find_all("td")
+        tds = tbl.find_all(["th", "td"])
         text = " ".join(td.get_text() for td in tds)
-        if "전화번호" in text or "공고만료일" in text:
-            info_table = tbl
+        if "작성일" in text or "공고만료일" in text or "전화번호" in text:
+            for i, td in enumerate(tds):
+                label = td.get_text(strip=True)
+                if label == "작성일" and i + 1 < len(tds):
+                    result["date"] = tds[i + 1].get_text(strip=True)
+                if label == "공고만료일" and i + 1 < len(tds):
+                    result["end_date"] = tds[i + 1].get_text(strip=True)
+                if label == "전화번호" and i + 1 < len(tds):
+                    result["phone"] = tds[i + 1].get_text(strip=True)
             break
 
-    if info_table:
-        tds = info_table.find_all(["th", "td"])
-        for i, td in enumerate(tds):
-            label = td.get_text(strip=True)
-            if label == "전화번호" and i + 1 < len(tds):
-                result["phone"] = tds[i + 1].get_text(strip=True)
-            if label == "공고만료일" and i + 1 < len(tds):
-                result["end_date"] = tds[i + 1].get_text(strip=True)
-
-    for a in soup.find_all("a", href=True):
-        href = a["href"]
-        name = a.get_text(strip=True)
-        if any(kw in href for kw in ["FileDown", "Download", "download", "fileDown"]):
-            if href.startswith("/"):
-                href = BASE_URL + href
-            ext = ""
-            if ".pdf" in href.lower() or ".pdf" in name.lower():
-                ext = "pdf"
-            elif ".hwp" in href.lower() or ".hwp" in name.lower():
-                ext = "hwp"
-            result["files"].append({"name": name, "url": href, "ext": ext})
-
+    # 첨부파일 파싱 - javascript:download('파일ID', '파일명') 패턴
     for tag in soup.find_all(onclick=True):
         onclick = tag.get("onclick", "")
-        if "download" in onclick.lower() or "filedown" in onclick.lower():
-            name = tag.get_text(strip=True)
-            m = re.search(r"'([^']+)'", onclick)
-            file_id = m.group(1) if m else ""
-            ext = "pdf" if ".pdf" in name.lower() else ("hwp" if ".hwp" in name.lower() else "")
-            if name and file_id:
-                result["files"].append({
-                    "name": name,
-                    "url": f"{BASE_URL}/portal/notice/realestate/RealNoticeFileDown.work?seq_id={seq_id}&file_id={file_id}",
-                    "ext": ext,
-                })
+        _parse_download(onclick, result["files"])
+
+    for a in soup.find_all("a", href=True):
+        href = a.get("href", "")
+        if href.startswith("javascript:download"):
+            _parse_download(href, result["files"])
+
+    # a 태그 텍스트에서 파일명 추출 (onclick 방식)
+    for a in soup.find_all("a"):
+        onclick = a.get("onclick", "")
+        if "download" in onclick.lower():
+            _parse_download(onclick, result["files"])
+
+    # 중복 제거
+    seen = set()
+    unique_files = []
+    for f in result["files"]:
+        key = f["url"]
+        if key not in seen:
+            seen.add(key)
+            unique_files.append(f)
+    result["files"] = unique_files
 
     return result
+
+
+def _parse_download(text, files_list):
+    """javascript:download('파일ID', '파일명') 패턴 파싱"""
+    m = re.search(r"download\('([^']+)',\s*'([^']+)'\)", text)
+    if m:
+        file_id = m.group(1)
+        file_name = m.group(2)
+        # 실제 파일 URL 구성
+        file_url = FILE_BASE_URL + file_id
+        ext = ""
+        name_lower = file_name.lower()
+        if name_lower.endswith(".pdf"):
+            ext = "pdf"
+        elif name_lower.endswith(".hwp") or name_lower.endswith(".hwpx"):
+            ext = "hwp"
+        elif name_lower.endswith(".docx") or name_lower.endswith(".doc"):
+            ext = "docx"
+        files_list.append({
+            "name": file_name,
+            "url": file_url,
+            "ext": ext,
+        })
 
 
 def categorize(title, agency):
@@ -233,7 +251,12 @@ def scrape_all():
     for i, item in enumerate(all_items):
         print(f"  상세 {i+1}/{len(all_items)} (no={item['no']})...")
         detail = parse_detail_page(item["seq_id"])
-        item.update(detail)
+        # 상세 페이지 날짜가 있으면 덮어쓰기
+        if detail.get("date"):
+            item["date"] = detail["date"]
+        item["end_date"] = detail.get("end_date", "")
+        item["phone"] = detail.get("phone", "")
+        item["files"] = detail.get("files", [])
         item["cat"] = categorize(item["title"], item["agency"])
         item["detail_url"] = f"{VIEW_URL}?pageIndex=1&seq_id={item['seq_id']}&bub_cd=&searchWord=&searchOption="
         time.sleep(0.8)
