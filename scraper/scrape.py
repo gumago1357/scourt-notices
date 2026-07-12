@@ -10,25 +10,23 @@ BASE_URL = "https://www.scourt.go.kr"
 LIST_URL = BASE_URL + "/portal/notice/realestate/RealNoticeList.work"
 VIEW_URL = BASE_URL + "/portal/notice/realestate/RealNoticeView.work"
 
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-    "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
-    "Accept-Encoding": "gzip, deflate, br",
-    "Connection": "keep-alive",
-    "Upgrade-Insecure-Requests": "1",
-}
+PROXY_URL = "https://scourt-proxy.gumago1357.workers.dev"
 
 KST = timezone(timedelta(hours=9))
 
-session = requests.Session()
-session.headers.update(HEADERS)
-
 
 def fetch(url, params=None, encoding="euc-kr"):
+    if params:
+        from urllib.parse import urlencode
+        full_url = url + "?" + urlencode(params)
+    else:
+        full_url = url
+
+    proxy_request_url = PROXY_URL + "?url=" + requests.utils.quote(full_url, safe="")
+
     for attempt in range(3):
         try:
-            resp = session.get(url, params=params, timeout=30)
+            resp = requests.get(proxy_request_url, timeout=30)
             resp.encoding = encoding
             return BeautifulSoup(resp.text, "html.parser")
         except Exception as e:
@@ -188,12 +186,8 @@ def categorize(title, agency):
 def scrape_all():
     print("=" * 50)
     print("대법원 자산매각 공고 스크래핑 시작")
+    print(f"프록시: {PROXY_URL}")
     print("=" * 50)
-
-    # 먼저 메인 페이지 방문해서 세션 쿠키 획득
-    print("\n세션 초기화 중...")
-    session.get(BASE_URL + "/portal/main.jsp", timeout=30)
-    time.sleep(2)
 
     print("\n[1단계] 전체 페이지 수 확인...")
     soup1 = fetch(LIST_URL, params={"pageIndex": 1})
