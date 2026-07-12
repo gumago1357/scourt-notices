@@ -77,12 +77,24 @@ def parse_list_page(soup):
         if not m:
             continue
         seq_id = m.group(1)
-        date = cols[4].get_text(strip=True) if len(cols) > 4 else ""
+
+        # 날짜와 조회수 파싱 - 컬럼 수에 따라 처리
+        date = ""
         attach_count = 0
-        if len(cols) > 5:
+        if len(cols) >= 6:
+            # 번호 / 법원 / 기관 / 제목 / 날짜 / 첨부
+            date_text = cols[4].get_text(strip=True)
+            # 날짜 형식 확인 (2026.06.19 같은 형식)
+            if re.match(r"\d{4}\.\d{2}\.\d{2}", date_text):
+                date = date_text
             m2 = re.search(r"\d+", cols[5].get_text(strip=True))
             if m2:
                 attach_count = int(m2.group())
+        elif len(cols) == 5:
+            date_text = cols[4].get_text(strip=True)
+            if re.match(r"\d{4}\.\d{2}\.\d{2}", date_text):
+                date = date_text
+
         items.append({
             "no": no,
             "seq_id": seq_id,
