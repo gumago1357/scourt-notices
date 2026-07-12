@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>파산·회생 자산매각 공고 게시판</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'맑은 고딕','Malgun Gothic',sans-serif;font-size:13px;background:#f0f2f5;color:#222}
+
+/* 헤더 */
+.header{background:#1a3a6c;color:#fff;padding:14px 24px;display:flex;justify-content:space-between;align-items:center}
+.header-left h1{font-size:20px;font-weight:700;letter-spacing:-0.5px}
+.header-left p{font-size:11px;opacity:0.7;margin-top:3px}
+.header-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.btn-update{background:#fff;color:#1a3a6c;border:none;padding:6px 16px;border-radius:4px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px}
+.btn-update:hover{background:#e8f0ff}
+.header-info{font-size:11px;opacity:0.8;text-align:right}
+.header-info span{color:#ffd700;font-weight:600}
+
+/* 레이아웃 */
+.container{display:flex;min-height:calc(100vh - 72px)}
+
+/* 사이드바 */
+.sidebar{width:180px;min-width:180px;background:#fff;border-right:1px solid #dde3ed;padding:16px 0}
+.sidebar-title{font-size:11px;font-weight:700;color:#888;padding:0 16px 10px;letter-spacing:1px}
+.cat-item{display:flex;justify-content:space-between;align-items:center;padding:8px 16px;cursor:pointer;color:#444;transition:all 0.1s}
+.cat-item:hover{background:#f5f7fa}
+.cat-item.active{background:#1a3a6c;color:#fff;font-weight:600}
+.cat-item.active .cat-count{background:rgba(255,255,255,0.2);color:#fff}
+.cat-count{font-size:11px;background:#eef1f7;color:#666;padding:2px 8px;border-radius:10px;min-width:30px;text-align:center}
+
+/* 메인 */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+
+/* 검색바 */
+.search-bar{background:#fff;padding:12px 20px;border-bottom:1px solid #dde3ed;display:flex;gap:8px;align-items:center}
+.search-select{height:34px;padding:0 8px;border:1px solid #cdd3e0;border-radius:4px;font-size:13px;background:#fff;color:#333}
+.search-input{flex:1;height:34px;padding:0 12px;border:1px solid #cdd3e0;border-radius:4px;font-size:13px}
+.search-input:focus,.search-select:focus{outline:none;border-color:#1a3a6c}
+.btn-search{height:34px;padding:0 20px;background:#1a3a6c;color:#fff;border:none;border-radius:4px;font-size:13px;font-weight:600;cursor:pointer}
+.btn-search:hover{background:#152f5a}
+.btn-reset{height:34px;padding:0 16px;background:#f0f2f5;color:#555;border:1px solid #cdd3e0;border-radius:4px;font-size:13px;cursor:pointer}
+.btn-reset:hover{background:#e4e7ed}
+
+/* 테이블 영역 */
+.table-area{flex:1;padding:0;overflow:auto}
+.table-meta{display:flex;justify-content:space-between;align-items:center;padding:10px 20px;font-size:12px;color:#666;background:#fff;border-bottom:1px solid #eee}
+.table-meta b{color:#1a3a6c;font-weight:700}
+
+table{width:100%;border-collapse:collapse;background:#fff}
+thead tr{background:#f5f7fa;border-bottom:2px solid #dde3ed}
+th{padding:10px 12px;text-align:center;font-weight:600;font-size:12px;color:#555;white-space:nowrap}
+th.left{text-align:left}
+td{padding:10px 12px;border-bottom:1px solid #eef0f5;vertical-align:middle;text-align:center}
+td.left{text-align:left}
+tr:hover td{background:#f9fbff}
+.td-no{color:#999;font-size:12px}
+.td-court{font-size:12px;color:#444}
+.td-agency{font-size:12px;color:#555;line-height:1.5;text-align:left}
+.td-title-wrap{text-align:left}
+.td-title-link{color:#1155cc;text-decoration:none;font-size:13px;font-weight:500;display:block;margin-bottom:3px}
+.td-title-link:hover{text-decoration:underline}
+.td-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:3px}
+.tag{font-size:11px;padding:1px 7px;border-radius:3px;display:inline-flex;align-items:center;gap:3px}
+.tag-price{background:#fff8e6;color:#8a6000;border:1px solid #f0d080}
+.tag-date{background:#fff0f0;color:#b00;border:1px solid #f0b0b0}
+.tag-type{background:#f0f4ff;color:#1a3a6c;border:1px solid #c0cce8}
+.tag-loc{background:#f0fff4;color:#1a6b3a;border:1px solid #a0d8b0}
+.td-date{font-size:12px;color:#777;white-space:nowrap}
+.td-attach{text-align:center}
+.attach-icon{display:inline-flex;flex-direction:column;align-items:center;background:#eef3ff;border:1px solid #c0cce8;border-radius:3px;padding:2px 6px;font-size:10px;color:#1a3a6c;min-width:24px;cursor:pointer}
+.attach-icon:hover{background:#dbe5ff}
+
+/* 페이지네이션 */
+.pagination{display:flex;justify-content:center;align-items:center;gap:4px;padding:16px;background:#fff;border-top:1px solid #eee}
+.page-btn{padding:5px 10px;border:1px solid #cdd3e0;border-radius:4px;background:#fff;color:#555;font-size:12px;cursor:pointer;min-width:32px}
+.page-btn:hover{background:#f0f4ff;border-color:#1a3a6c;color:#1a3a6c}
+.page-btn.active{background:#1a3a6c;color:#fff;border-color:#1a3a6c;font-weight:600}
+
+/* 로딩 */
+.loading-row td{text-align:center;padding:60px;color:#999}
+.spinner{display:inline-block;width:20px;height:20px;border:2px solid #ddd;border-top-color:#1a3a6c;border-radius:50%;animation:spin 0.8s linear infinite;vertical-align:middle;margin-right:8px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* 상세 페이지 */
+.detail-page{display:none;flex:1;flex-direction:column;background:#fff;overflow:auto}
+.detail-back{padding:12px 20px;border-bottom:1px solid #eee;background:#f8f9fc}
+.detail-back button{background:none;border:1px solid #cdd3e0;padding:5px 14px;border-radius:4px;font-size:12px;cursor:pointer;color:#555}
+.detail-back button:hover{background:#eee}
+.detail-content{padding:20px}
+.detail-title{font-size:18px;font-weight:700;color:#1a3a6c;padding-bottom:14px;border-bottom:2px solid #1a3a6c;margin-bottom:16px}
+.detail-info-table{width:100%;border-collapse:collapse;margin-bottom:20px;font-size:13px}
+.detail-info-table th{background:#f5f7fa;border:1px solid #dde3ed;padding:8px 14px;font-weight:600;color:#444;width:120px;text-align:left}
+.detail-info-table td{border:1px solid #dde3ed;padding:8px 14px;color:#333}
+.attach-section{margin-bottom:20px}
+.attach-section h3{font-size:13px;font-weight:700;color:#333;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.file-item{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border:1px solid #dde3ed;border-radius:4px;margin-bottom:6px;background:#f9fbff}
+.file-name{color:#1155cc;font-size:13px;display:flex;align-items:center;gap:6px}
+.file-ext{font-size:11px;padding:2px 6px;border-radius:3px;font-weight:600}
+.ext-pdf{background:#ffebeb;color:#c00}
+.ext-hwp{background:#ebf0ff;color:#1a3a6c}
+.file-btns{display:flex;gap:6px}
+.btn-preview{padding:5px 14px;background:#f0f4ff;color:#1a3a6c;border:1px solid #c0cce8;border-radius:4px;font-size:12px;cursor:pointer}
+.btn-preview:hover{background:#dbe5ff}
+.btn-download{padding:5px 14px;background:#1a3a6c;color:#fff;border:none;border-radius:4px;font-size:12px;cursor:pointer}
+.btn-download:hover{background:#152f5a}
+
+/* PDF/HWP 미리보기 */
+.preview-area{border:1px solid #dde3ed;border-radius:4px;overflow:hidden;background:#eee;min-height:400px;display:flex;align-items:center;justify-content:center}
+.preview-area iframe{width:100%;height:600px;border:none}
+.preview-placeholder{text-align:center;color:#888;padding:40px}
+.preview-placeholder p{margin-top:8px;font-size:12px}
+
+/* 빈 상태 */
+.empty-row td{text-align:center;padding:60px;color:#999}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <h1>파산·회생 자산매각 공고 게시판</h1>
+    <p>대법원 회생·파산 자산매각 공고 (scourt.go.kr) 수집 데이터</p>
+  </div>
+  <div class="header-right">
+    <button class="btn-update" onclick="loadData()">🔄 업데이트</button>
+    <div class="header-info" id="headerInfo">마지막 확인: —</div>
+    <div class="header-info" id="headerBadge"></div>
+  </div>
+</div>
+
+<div class="container">
+  <!-- 사이드바 -->
+  <div class="sidebar">
+    <div class="sidebar-title">구분별</div>
+    <div id="catList"></div>
+  </div>
+
+  <!-- 목록 페이지 -->
+  <div class="main" id="listPage">
+    <div class="search-bar">
+      <select class="search-select" id="searchField">
+        <option value="all">전체</option>
+        <option value="title">제목</option>
+        <option value="agency">매각기관</option>
+        <option value="court">관할법원</option>
+      </select>
+      <input class="search-input" id="searchInput" placeholder="검색어를 입력하세요" onkeydown="if(event.key==='Enter')doSearch()">
+      <button class="btn-search" onclick="doSearch()">검색</button>
+      <button class="btn-reset" onclick="doReset()">초기화</button>
+    </div>
+    <div class="table-area">
+      <div class="table-meta">
+        <span id="metaText">총 <b>0</b>건</span>
+        <span id="pageInfo">1/1 페이지</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:54px">번호</th>
+            <th style="width:100px">관할법원</th>
+            <th style="width:200px">매각기관</th>
+            <th class="left">제목</th>
+            <th style="width:86px">작성일</th>
+            <th style="width:40px"></th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr class="loading-row"><td colspan="6"><span class="spinner"></span>데이터를 불러오는 중...</td></tr>
+        </tbody>
+      </table>
+      <div class="pagination" id="pagination"></div>
+    </div>
+  </div>
+
+  <!-- 상세 페이지 -->
+  <div class="detail-page" id="detailPage">
+    <div class="detail-back">
+      <button onclick="goBack()">← 목록으로</button>
+    </div>
+    <div class="detail-content" id="detailContent"></div>
+  </div>
+</div>
+
+<script>
+const DATA_URL = "data/notices.json";
+const PAGE_SIZE = 20;
+
+let allData = [];
+let filteredData = [];
+let currentCat = "전체";
+let currentPage = 1;
+let searchWord = "";
+let searchField = "all";
+
+const CATS = [
+  "전체","부동산","자산(일반)","채권","특허·지식재산",
+  "자동차·차량","비품·집기","기계·장비","재고·상품",
+  "유체동산","주식·지분","기타","회원권","분양권"
+];
+
+async function loadData() {
+  const btn = document.querySelector('.btn-update');
+  btn.textContent = '⏳ 불러오는 중...';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch(DATA_URL + "?t=" + Date.now());
+    const json = await res.json();
+    allData = json.notices || [];
+
+    document.getElementById("headerInfo").textContent = "마지막 확인: " + (json.updated_at_display || "—");
+    document.getElementById("headerBadge").innerHTML =
+      `📋 새 파일 ${allData.length}개 · 새 공고 ${allData.length}건 · <span>${json.updated_at_display || ""}</span>`;
+  } catch(e) {
+    console.error(e);
+  }
+
+  btn.textContent = '🔄 업데이트';
+  btn.disabled = false;
+
+  currentCat = "전체";
+  currentPage = 1;
+  renderCats();
+  applyFilter();
+}
+
+function countCat(cat) {
+  if(cat === "전체") return allData.length;
+  return allData.filter(r => r.cat === cat).length;
+}
+
+function renderCats() {
+  document.getElementById("catList").innerHTML = CATS.map(cat => {
+    const cnt = countCat(cat);
+    return `<div class="cat-item${currentCat===cat?' active':''}" onclick="selectCat('${cat}')">
+      <span>${cat}</span>
+      <span class="cat-count">${cnt}</span>
+    </div>`;
+  }).join("");
+}
+
+function selectCat(cat) {
+  currentCat = cat;
+  currentPage = 1;
+  renderCats();
+  applyFilter();
+}
+
+function applyFilter() {
+  let d = allData;
+  if(currentCat !== "전체") d = d.filter(r => r.cat === currentCat);
+  if(searchWord) {
+    const w = searchWord.toLowerCase();
+    d = d.filter(r => {
+      if(searchField === "title") return r.title.toLowerCase().includes(w);
+      if(searchField === "agency") return r.agency.toLowerCase().includes(w);
+      if(searchField === "court") return r.court.toLowerCase().includes(w);
+      return r.title.toLowerCase().includes(w) || r.agency.toLowerCase().includes(w) || r.court.toLowerCase().includes(w);
+    });
+  }
+  filteredData = d;
+  renderTable();
+}
+
+function renderTable() {
+  const total = filteredData.length;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  if(currentPage > totalPages) currentPage = 1;
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const rows = filteredData.slice(start, start + PAGE_SIZE);
+
+  const catLabel = currentCat === "전체" ? "" : ` · 구분: <b>${currentCat}</b>`;
+  document.getElementById("metaText").innerHTML = `총 <b>${total}</b>건${catLabel}`;
+  document.getElementById("pageInfo").textContent = `${currentPage}/${totalPages} 페이지`;
+
+  const tbody = document.getElementById("tableBody");
+  if(rows.length === 0) {
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="6">검색 결과가 없습니다.</td></tr>`;
+  } else {
+    tbody.innerHTML = rows.map(r => {
+      const tags = buildTags(r);
+      const attachHtml = r.attach_count > 0
+        ? `<div class="attach-icon" onclick="event.stopPropagation();showDetail(${r.no})">📎<span>${r.attach_count}</span></div>`
+        : "";
+      return `<tr onclick="showDetail(${r.no})" style="cursor:pointer">
+        <td class="td-no">${r.no}</td>
+        <td class="td-court">${r.court}</td>
+        <td class="td-agency">${r.agency}</td>
+        <td class="td-title-wrap">
+          <a class="td-title-link" onclick="event.stopPropagation();showDetail(${r.no})">${r.title}</a>
+          ${tags ? `<div class="td-tags">${tags}</div>` : ""}
+        </td>
+        <td class="td-date">${r.date || ""}</td>
+        <td class="td-attach">${attachHtml}</td>
+      </tr>`;
+    }).join("");
+  }
+  renderPagination(totalPages);
+}
+
+function buildTags(r) {
+  let tags = "";
+  if(r.price) tags += `<span class="tag tag-price">💰 ${r.price}</span>`;
+  if(r.end_date) tags += `<span class="tag tag-date">📅 ${r.end_date}</span>`;
+  if(r.asset_type) tags += `<span class="tag tag-type">📦 ${r.asset_type}</span>`;
+  if(r.location) tags += `<span class="tag tag-loc">📍 ${r.location}</span>`;
+  return tags;
+}
+
+function renderPagination(totalPages) {
+  const el = document.getElementById("pagination");
+  if(totalPages <= 1) { el.innerHTML = ""; return; }
+  let html = `<button class="page-btn" onclick="gotoPage(1)">«</button>
+    <button class="page-btn" onclick="gotoPage(${Math.max(1,currentPage-1)})">‹</button>`;
+  const start = Math.max(1, currentPage - 2);
+  const end = Math.min(totalPages, start + 4);
+  for(let i = start; i <= end; i++) {
+    html += `<button class="page-btn${i===currentPage?' active':''}" onclick="gotoPage(${i})">${i}</button>`;
+  }
+  html += `<button class="page-btn" onclick="gotoPage(${Math.min(totalPages,currentPage+1)})">›</button>
+    <button class="page-btn" onclick="gotoPage(${totalPages})">»</button>`;
+  el.innerHTML = html;
+}
+
+function gotoPage(p) { currentPage = p; renderTable(); window.scrollTo(0,0); }
+
+function doSearch() {
+  searchWord = document.getElementById("searchInput").value.trim();
+  searchField = document.getElementById("searchField").value;
+  currentPage = 1;
+  applyFilter();
+}
+
+function doReset() {
+  document.getElementById("searchInput").value = "";
+  searchWord = "";
+  searchField = "all";
+  currentCat = "전체";
+  currentPage = 1;
+  renderCats();
+  applyFilter();
+}
+
+function showDetail(no) {
+  const item = allData.find(r => r.no === no);
+  if(!item) return;
+
+  document.getElementById("listPage").style.display = "none";
+  const dp = document.getElementById("detailPage");
+  dp.style.display = "flex";
+
+  const files = item.files || [];
+  const filesHtml = files.length > 0 ? `
+    <div class="attach-section">
+      <h3>📎 첨부파일 (${files.length}건)</h3>
+      ${files.map((f, i) => `
+        <div class="file-item">
+          <div class="file-name">
+            <span class="file-ext ${f.ext === 'pdf' ? 'ext-pdf' : 'ext-hwp'}">${(f.ext || 'FILE').toUpperCase()}</span>
+            ${f.name || "첨부파일"}
+          </div>
+          <div class="file-btns">
+            <button class="btn-preview" onclick="previewFile('${f.url}','${f.ext}','preview-${i}')">📄 미리보기</button>
+            <button class="btn-download" onclick="window.open('${f.url}')">⬇ 다운로드</button>
+          </div>
+        </div>
+        <div id="preview-${i}" class="preview-area" style="display:none;margin-bottom:12px"></div>
+      `).join("")}
+    </div>` : "";
+
+  document.getElementById("detailContent").innerHTML = `
+    <div class="detail-title">${item.title}</div>
+    <table class="detail-info-table">
+      <tr><th>번호</th><td>${item.no}</td><th>작성일</th><td>${item.date || "—"}</td></tr>
+      <tr><th>관할법원</th><td>${item.court}</td><th>공고만료일</th><td>${item.end_date || "—"}</td></tr>
+      <tr><th>매각기관</th><td colspan="3">${item.agency}</td></tr>
+      ${item.phone ? `<tr><th>전화번호</th><td colspan="3">${item.phone}</td></tr>` : ""}
+    </table>
+    ${filesHtml}
+    ${files.length === 0 ? '<p style="color:#888;font-size:13px">첨부파일이 없습니다.</p>' : ""}
+  `;
+}
+
+function previewFile(url, ext, previewId) {
+  const area = document.getElementById(previewId);
+  if(area.style.display === "block") {
+    area.style.display = "none";
+    return;
+  }
+  area.style.display = "block";
+
+  if(ext === "pdf") {
+    area.innerHTML = `<iframe src="${url}" style="width:100%;height:600px;border:none"></iframe>`;
+  } else if(ext === "hwp") {
+    area.innerHTML = `
+      <div class="preview-placeholder">
+        <div style="font-size:40px">📄</div>
+        <p>HWP 파일은 브라우저에서 직접 미리보기가 어렵습니다.</p>
+        <p>다운로드 후 한글 프로그램으로 열어보세요.</p>
+        <button class="btn-download" style="margin-top:12px" onclick="window.open('${url}')">⬇ 다운로드</button>
+      </div>`;
+  } else {
+    area.innerHTML = `<div class="preview-placeholder"><p>미리보기를 지원하지 않는 파일 형식입니다.</p></div>`;
+  }
+}
+
+function goBack() {
+  document.getElementById("detailPage").style.display = "none";
+  document.getElementById("listPage").style.display = "flex";
+}
+
+// 초기 로드
+loadData();
+</script>
+</body>
+</html>
