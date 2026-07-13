@@ -1,4 +1,4 @@
-name: 대법원 자산매각 공고 스크래핑
+name: 대법원 공고 스크래핑
 
 on:
   schedule:
@@ -8,28 +8,58 @@ on:
 jobs:
   scrape:
     runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    permissions:
+      contents: write
 
     steps:
-      - name: 저장소 체크아웃
+      - name: 레포지토리 체크아웃
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Python 설치
+      - name: Python 3.11 설정
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: 의존성 설치
+      - name: Python 패키지 설치
+        run: pip install playwright
+
+      - name: Playwright 브라우저 설치
         run: |
-          pip install requests beautifulsoup4
+          playwright install chromium
+          playwright install-deps chromium
 
       - name: 스크래핑 실행
-        run: |
-          python scraper/scrape.py
+        run: python scraper/scrape.py
+        env:
+          PYTHONUNBUFFERED: "1"
 
-      - name: 변경사항 커밋 & 푸시
+      - name: 변경사항 확인
+        id: check_changes
+        run: |
+          git add data/notices.json docs/files/
+          if git diff --staged --quiet; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 커밋 및 푸시
+        if: steps.check_changes.outputs.changed == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/notices.json docs/files/
-          git diff --staged --quiet || git commit -m "데이터 업데이트: $(TZ='Asia/Seoul' date '+%Y-%m-%d %H:%M KST')"
+          NOTICE_COUNT=$(python -c "
+          import json
+          try:
+              d = json.load(open('data/notices.json'))
+              print(d.get('count', '?'))
+          except:
+              print('?')
+          ")
+          DATE_KST=$(TZ='Asia/Seoul' date '+%Y-%m-%d %H:%M KST')
+          git commit -m "공고 업데이트: ${NOTICE_COUNT}건 (${DATE_KST})"
           git push
