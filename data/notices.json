@@ -1,8 +1,50 @@
 {
-  "updated_at": "2026-07-13 09:43:03",
-  "updated_at_display": "2026-07-13 09:43",
-  "total": 505,
+  "updated_at": "2026-07-13 10:32:43",
+  "updated_at_display": "2026-07-13 10:32",
+  "total": 507,
   "notices": [
+    {
+      "no": 507,
+      "seq_id": "34442",
+      "court": "수원회생법원",
+      "agency": "채무자 김옥자의 파산관재인 김영일",
+      "title": "부동산(지분)매각공고",
+      "date": "2026.07.13",
+      "attach_count": 0,
+      "end_date": "2026.09.11",
+      "phone": "031-214-3579",
+      "files": [
+        {
+          "name": "2026하단11418 허가서(허가서(공매공고)).pdf",
+          "file_id": "1783902171052_092251.pdf",
+          "ext": "pdf",
+          "local_path": "files/1783902171052_092251.pdf"
+        }
+      ],
+      "cat": "부동산",
+      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34442&bub_cd=&searchWord=&searchOption="
+    },
+    {
+      "no": 506,
+      "seq_id": "34441",
+      "court": "수원회생법원",
+      "agency": "채무자 신영숙의 파산관재인 공인회계사 성진호",
+      "title": "자산(기중기) 매각공고",
+      "date": "2026.07.13",
+      "attach_count": 0,
+      "end_date": "2026.08.12",
+      "phone": "031-211-3445",
+      "files": [
+        {
+          "name": "2025하단10764 허가서(자산매각(기중기) 공고 허가신청).pdf",
+          "file_id": "1783902100332_092140.pdf",
+          "ext": "pdf",
+          "local_path": "files/1783902100332_092140.pdf"
+        }
+      ],
+      "cat": "자산(일반)",
+      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34441&bub_cd=&searchWord=&searchOption="
+    },
     {
       "no": 505,
       "seq_id": "34440",
