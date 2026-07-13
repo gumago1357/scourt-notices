@@ -25,7 +25,7 @@ jobs:
           python-version: '3.11'
 
       - name: Python 패키지 설치
-        run: pip install playwright
+        run: pip install playwright requests beautifulsoup4
 
       - name: Playwright 브라우저 설치
         run: |
