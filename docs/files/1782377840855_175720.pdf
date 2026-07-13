@@ -1,0 +1,24 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<title>대한민국 법원</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=euc-kr" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=yes, target-densitydpi=medium-dpi"/>
+  <link rel="stylesheet" type="text/css" href="/common_error.css">
+</head>
+<body class="colorBg">
+	<div id="errorPage">
+		<div class="errorWrap" style="width:60% !important;">
+			<div class="errorBg" style="width:60% !important;">
+				<p class="errorDesc" style="margin-top:300px;">
+					사용에 불편을 드려 죄송합니다.<br />
+					더 나은 서비스를 위하여 시스템 작업 중입니다.<br />
+					<span>보다 편리하고 안정적인 서비스</span>를 제공할 수 있도록 <br />
+					최선을 다하겠습니다. 감사합니다.<br/>
+			</div>
+		</div>
+	</div>
+</body>
+</html>
