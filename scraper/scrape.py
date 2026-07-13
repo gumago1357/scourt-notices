@@ -1,16 +1,20 @@
 #!/usr/bin/env python3
 """
-대법원 파산·회생 자산매각 공고 스크래퍼 v3 (Playwright)
-- 딜레이 넉넉하게 설정해서 연결 끊김 방지
+대법원 파산·회생 자산매각 공고 스크래퍼 v4 (하이브리드)
+- 목록/상세 수집: requests + BeautifulSoup (가볍고 안정적)
+- 파일 다운로드: Playwright (javascript:download() 처리)
 """
 
 import asyncio
 import json
 import re
 import shutil
+import time
 from datetime import datetime
 from pathlib import Path
 
+import requests
+from bs4 import BeautifulSoup
 from playwright.async_api import async_playwright, Page, TimeoutError as PWTimeout
 
 # ── 경로 설정 ─────────────────────────────────────────────────────────────────
@@ -28,11 +32,36 @@ LIST_URL     = BASE_URL + "/portal/notice/realestate/RealNoticeList.work"
 VIEW_URL     = BASE_URL + "/portal/notice/realestate/RealNoticeView.work"
 DOWNLOAD_URL = BASE_URL + "/portal/notice/realestate/RealNoticeFileDown.work"
 
-# ── 딜레이 설정 (서버 부하 방지 / 연결 끊김 방지) ────────────────────────────
-DELAY_BETWEEN_PAGES   = 5.0   # 목록 페이지 이동 사이
-DELAY_AFTER_DETAIL    = 6.0   # 상세 페이지 수집 후
-DELAY_AFTER_FILE      = 7.0   # 파일 다운로드 후
-DELAY_PAGE_LOAD       = 3000  # 페이지 로드 후 추가 대기 (밀리초)
+# ── 딜레이 설정 ───────────────────────────────────────────────────────────────
+DELAY_LIST   = 2.0   # 목록 페이지 간 대기
+DELAY_DETAIL = 3.0   # 상세 페이지 간 대기
+DELAY_FILE   = 5.0   # 파일 다운로드 간 대기
+
+# ── HTTP 세션 설정 ────────────────────────────────────────────────────────────
+SESSION = requests.Session()
+SESSION.headers.update({
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/125.0.0.0 Safari/537.36"
+    ),
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8",
+    "Referer": BASE_URL,
+})
+
+def get_page(url: str, params: dict = None, retries: int = 3) -> BeautifulSoup | None:
+    """requests로 페이지 가져오기 (실패 시 재시도)"""
+    for attempt in range(retries):
+        try:
+            resp = SESSION.get(url, params=params, timeout=30)
+            resp.raise_for_status()
+            resp.encoding = "utf-8"
+            return BeautifulSoup(resp.text, "html.parser")
+        except Exception as e:
+            print(f"  [재시도 {attempt+1}/{retries}] {e}")
+            time.sleep(5 * (attempt + 1))
+    return None
 
 # ── 파일 유효성 검사 ──────────────────────────────────────────────────────────
 MIN_VALID_BYTES = 5_000
@@ -62,81 +91,64 @@ def purge_broken_files() -> int:
             removed += 1
     return removed
 
-# ── 브라우저 설정 ─────────────────────────────────────────────────────────────
-BROWSER_ARGS = [
-    "--no-sandbox",
-    "--disable-setuid-sandbox",
-    "--disable-dev-shm-usage",
-    "--disable-gpu",
-    "--disable-blink-features=AutomationControlled",
-]
+# ── 목록 수집 (requests) ──────────────────────────────────────────────────────
+def get_total_pages(soup: BeautifulSoup) -> int:
+    """전체 페이지 수 추출"""
+    # 페이지 링크에서 최대 pageIndex 찾기
+    nums = []
+    for a in soup.find_all("a", href=True):
+        m = re.search(r"pageIndex=(\d+)", a["href"])
+        if m:
+            nums.append(int(m.group(1)))
+    for tag in soup.find_all(onclick=True):
+        m = re.search(r"pageIndex=(\d+)|goPage\((\d+)\)", tag.get("onclick", ""))
+        if m:
+            nums.append(int(m.group(1) or m.group(2)))
+    return max(nums) if nums else 1
 
-USER_AGENT = (
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-    "AppleWebKit/537.36 (KHTML, like Gecko) "
-    "Chrome/125.0.0.0 Safari/537.36"
-)
-
-# ── 목록 페이지 파싱 ──────────────────────────────────────────────────────────
-async def get_total_pages(page: Page) -> int:
-    try:
-        content = await page.content()
-        nums = re.findall(r"pageIndex=(\d+)", content)
-        if nums:
-            return max(int(n) for n in nums)
-    except Exception:
-        pass
-    return 1
-
-async def scrape_list_page(page: Page, page_idx: int) -> list[dict]:
-    if page_idx > 1:
-        url = f"{LIST_URL}?pageIndex={page_idx}"
-        await page.goto(url, wait_until="domcontentloaded", timeout=60000)
-        await page.wait_for_timeout(DELAY_PAGE_LOAD)
-
-    content = await page.content()
+def parse_list_page(soup: BeautifulSoup) -> list[dict]:
+    """목록 페이지에서 공고 기본 정보 파싱"""
     notices = []
+    if not soup:
+        return notices
 
-    row_pattern = re.compile(r'<tr[^>]*>(.*?)</tr>', re.DOTALL | re.IGNORECASE)
-    link_pattern = re.compile(r'seq_id=(\d+)', re.IGNORECASE)
-    td_pattern   = re.compile(r'<td[^>]*>(.*?)</td>', re.DOTALL | re.IGNORECASE)
-    tag_pattern  = re.compile(r'<[^>]+>')
-
-    for row_m in row_pattern.finditer(content):
-        row_html = row_m.group(1)
-        link_m   = link_pattern.search(row_html)
-        if not link_m:
+    for a in soup.find_all("a", href=True):
+        href = a["href"]
+        m = re.search(r"seq_id=(\d+)", href)
+        if not m:
+            # onclick 방식도 확인
+            onclick = a.get("onclick", "")
+            m = re.search(r"seq_id=(\d+)", onclick)
+        if not m:
             continue
 
-        seq_id = link_m.group(1)
-        tds    = td_pattern.findall(row_html)
-        if len(tds) < 4:
+        seq_id = m.group(1)
+        title  = a.get_text(strip=True)
+        if not title or len(title) < 3:
             continue
 
-        def clean(html):
-            return tag_pattern.sub('', html).strip()
+        # 상위 tr에서 다른 정보 추출
+        tr = a.find_parent("tr")
+        if not tr:
+            continue
 
-        texts = [clean(td) for td in tds]
+        tds   = tr.find_all("td")
+        texts = [td.get_text(strip=True) for td in tds]
 
-        title = ""
-        for td in tds:
-            if 'seq_id=' in td:
-                title = clean(td)
-                break
-        if not title and texts:
-            title = max(texts, key=len)
+        court = texts[1] if len(texts) > 1 else ""
+        org   = texts[2] if len(texts) > 2 else ""
 
         date = ""
         for t in texts:
-            if re.match(r'\d{4}\.\d{2}\.\d{2}', t):
+            if re.match(r"\d{4}\.\d{2}\.\d{2}", t):
                 date = t
                 break
 
         notices.append({
             "id":     seq_id,
             "seq_id": seq_id,
-            "court":  texts[1] if len(texts) > 1 else "",
-            "org":    texts[2] if len(texts) > 2 else "",
+            "court":  court,
+            "org":    org,
             "title":  title,
             "date":   date,
             "files":  [],
@@ -144,44 +156,65 @@ async def scrape_list_page(page: Page, page_idx: int) -> list[dict]:
 
     return notices
 
-# ── 상세 페이지 파싱 ──────────────────────────────────────────────────────────
-async def scrape_detail(page: Page, seq_id: str) -> dict:
-    detail_url = (
-        f"{VIEW_URL}?pageIndex=1&seq_id={seq_id}"
-        f"&bub_cd=&searchWord=&searchOption="
-    )
+def scrape_all_list() -> list[dict]:
+    """전체 목록 페이지 수집"""
+    print(f"  URL: {LIST_URL}")
+    soup = get_page(LIST_URL)
+    if not soup:
+        print("  [오류] 목록 페이지 로드 실패")
+        return []
 
-    for attempt in range(3):
-        try:
-            await page.goto(detail_url, wait_until="domcontentloaded", timeout=60000)
-            await page.wait_for_timeout(DELAY_PAGE_LOAD)
-            break
-        except PWTimeout:
-            if attempt == 2:
-                print(f"    [타임아웃] 상세 페이지 로드 실패: {seq_id}")
-                return {"files": [], "end_date": "", "phone": "", "detail_url": detail_url}
-            print(f"    [재시도] {attempt+1}번째 실패, 10초 후 재시도...")
-            await asyncio.sleep(10)
+    total_pages = get_total_pages(soup)
+    print(f"  → 총 {total_pages}페이지")
 
-    content = await page.content()
-    result  = {"files": [], "end_date": "", "phone": "", "detail_url": detail_url}
+    all_notices = parse_list_page(soup)
+
+    for pg in range(2, total_pages + 1):
+        print(f"  목록 {pg}/{total_pages}...", end="\r", flush=True)
+        soup = get_page(LIST_URL, params={"pageIndex": pg})
+        if soup:
+            all_notices.extend(parse_list_page(soup))
+        time.sleep(DELAY_LIST)
+
+    print(f"\n  → 총 {len(all_notices)}건 수집")
+    return all_notices
+
+# ── 상세 페이지 수집 (requests) ───────────────────────────────────────────────
+def scrape_detail(seq_id: str) -> dict:
+    """상세 페이지에서 첨부파일 목록 파싱"""
+    params = {
+        "pageIndex":    "1",
+        "seq_id":       seq_id,
+        "bub_cd":       "",
+        "searchWord":   "",
+        "searchOption": "",
+    }
+    detail_url = VIEW_URL + "?" + "&".join(f"{k}={v}" for k, v in params.items())
+    result = {"files": [], "end_date": "", "phone": "", "detail_url": detail_url}
+
+    soup = get_page(VIEW_URL, params=params)
+    if not soup:
+        return result
 
     # 공고만료일, 전화번호 파싱
-    for label, key in [("공고만료일", "end_date"), ("전화번호", "phone")]:
-        m = re.search(
-            label + r'</th>\s*<td[^>]*>(.*?)</td>',
-            content, re.DOTALL | re.IGNORECASE
-        )
-        if m:
-            result[key] = re.sub(r'<[^>]+>', '', m.group(1)).strip()
+    for th in soup.find_all("th"):
+        label = th.get_text(strip=True)
+        td    = th.find_next_sibling("td")
+        if not td:
+            continue
+        if label == "공고만료일":
+            result["end_date"] = td.get_text(strip=True)
+        elif label == "전화번호":
+            result["phone"] = td.get_text(strip=True)
 
     # 첨부파일 파싱: javascript:download('파일ID','파일명')
+    full_html = str(soup)
     dl_pattern = re.compile(
         r"download\s*\(\s*'([^']+)'\s*,\s*'([^']+)'\s*\)",
         re.IGNORECASE
     )
     seen_ids = set()
-    for m in dl_pattern.finditer(content):
+    for m in dl_pattern.finditer(full_html):
         file_id   = m.group(1).strip()
         file_name = m.group(2).strip()
         if file_id in seen_ids:
@@ -206,13 +239,28 @@ async def scrape_detail(page: Page, seq_id: str) -> dict:
         })
 
     if result["files"]:
-        names = [f['name'] for f in result['files']]
+        names = [f["name"] for f in result["files"]]
         print(f"    → 첨부파일 {len(result['files'])}개: {names}")
 
     return result
 
-# ── 파일 다운로드 ─────────────────────────────────────────────────────────────
+# ── 파일 다운로드 (Playwright) ────────────────────────────────────────────────
+BROWSER_ARGS = [
+    "--no-sandbox",
+    "--disable-setuid-sandbox",
+    "--disable-dev-shm-usage",
+    "--disable-gpu",
+    "--disable-blink-features=AutomationControlled",
+]
+
+USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/125.0.0.0 Safari/537.36"
+)
+
 async def download_file(page: Page, seq_id: str, file_info: dict) -> str:
+    """Playwright로 파일 다운로드"""
     file_id   = file_info.get("id", "")
     file_name = file_info.get("name", "unknown")
     file_url  = file_info.get("url", "")
@@ -313,109 +361,112 @@ def save_notices(notices: list[dict]):
     }
     with open(NOTICES_JSON, "w", encoding="utf-8") as f:
         json.dump(output, f, ensure_ascii=False, indent=2)
-    print(f"[저장] notices.json → {len(notices)}건")
+    print(f"  [저장] notices.json → {len(notices)}건")
 
 # ── 메인 ─────────────────────────────────────────────────────────────────────
 async def main():
     print("=" * 60)
-    print("대법원 파산·회생 자산매각 공고 스크래퍼 v3")
+    print("대법원 파산·회생 자산매각 공고 스크래퍼 v4 (하이브리드)")
     print(f"실행 시각: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("=" * 60)
 
+    # 1단계: 깨진 파일 정리
     print("\n[1단계] 깨진 파일 정리")
     removed = purge_broken_files()
     print(f"  → {removed}개 삭제")
 
+    # 2단계: 기존 데이터 로드
     existing = load_existing()
     print(f"\n[2단계] 기존 공고: {len(existing)}건")
 
-    async with async_playwright() as pw:
-        browser = await pw.chromium.launch(headless=True, args=BROWSER_ARGS)
-        context = await browser.new_context(
-            locale="ko-KR",
-            timezone_id="Asia/Seoul",
-            user_agent=USER_AGENT,
-            accept_downloads=True,
-            extra_http_headers={
-                "Accept-Language": "ko-KR,ko;q=0.9",
-                "Accept": "text/html,application/xhtml+xml,*/*;q=0.8",
-                "Referer": BASE_URL,
-            },
-        )
-        await context.add_init_script(
-            "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
-        )
-        page = await context.new_page()
+    # 3단계: 목록 수집 (requests)
+    print(f"\n[3단계] 목록 수집 (requests)")
+    all_raw = scrape_all_list()
 
-        # 3단계: 목록 수집
-        print(f"\n[3단계] 목록 수집")
-        await page.goto(LIST_URL, wait_until="domcontentloaded", timeout=60000)
-        await page.wait_for_timeout(DELAY_PAGE_LOAD)
+    # 4단계: 상세 수집 (requests)
+    print(f"\n[4단계] 상세 정보 수집 (requests)")
+    new_count = 0
+    final: list[dict] = []
 
-        total_pages = await get_total_pages(page)
-        print(f"  → 총 {total_pages}페이지")
+    for idx, raw in enumerate(all_raw, 1):
+        nid = raw["id"]
+        print(f"  [{idx:3d}/{len(all_raw)}] {raw['title'][:50]}")
 
-        all_raw: list[dict] = []
-        for pg in range(1, total_pages + 1):
-            print(f"  목록 {pg}/{total_pages}...", end="\r", flush=True)
-            rows = await scrape_list_page(page, pg)
-            all_raw.extend(rows)
-            if pg < total_pages:
-                await asyncio.sleep(DELAY_BETWEEN_PAGES)
+        if nid in existing:
+            notice = existing[nid]
+            # 파일 없는 항목은 상세 재수집
+            if notice.get("files") is not None:
+                print("    → 스킵 (기존)")
+                final.append(notice)
+                continue
 
-        print(f"\n  → 총 {len(all_raw)}건")
+        detail = scrape_detail(nid)
+        raw.update(detail)
+        notice = raw
+        new_count += 1
+        final.append(notice)
+        time.sleep(DELAY_DETAIL)
 
-        # 4단계: 상세 + 파일
-        print(f"\n[4단계] 상세 정보 + 파일 다운로드")
-        final: list[dict] = []
-        new_count  = 0
-        file_count = 0
+        # 50건마다 중간 저장
+        if idx % 50 == 0:
+            save_notices(final)
+            print(f"  [중간저장] {idx}건")
 
-        for idx, raw in enumerate(all_raw, 1):
-            nid = raw["id"]
-            print(f"\n  [{idx:3d}/{len(all_raw)}] {raw['title'][:50]}")
-
-            if nid in existing:
-                notice  = existing[nid]
-                missing = [
-                    fi for fi in notice.get("files", [])
-                    if fi.get("id") and not fi.get("local")
-                ]
-                if not missing:
-                    print("    → 스킵 (기존 데이터)")
-                    final.append(notice)
-                    continue
-                print(f"    → 파일 {len(missing)}개 재시도")
-            else:
-                detail = await scrape_detail(page, nid)
-                raw.update(detail)
-                notice = raw
-                new_count += 1
-                await asyncio.sleep(DELAY_AFTER_DETAIL)
-
-            for fi in notice.get("files", []):
-                if not fi.get("id") or fi.get("local"):
-                    continue
-                local = await download_file(page, nid, fi)
-                if local:
-                    fi["local"] = local
-                    file_count += 1
-                await asyncio.sleep(DELAY_AFTER_FILE)
-
-            final.append(notice)
-
-            # 50건마다 중간 저장 (오류로 중단돼도 데이터 보존)
-            if idx % 50 == 0:
-                save_notices(final)
-                print(f"  [중간저장] {idx}건 처리 완료")
-
-        await browser.close()
-
-    print(f"\n[5단계] 최종 저장")
     save_notices(final)
+    print(f"  → 신규 상세 수집: {new_count}건")
 
+    # 5단계: 파일 다운로드 (Playwright)
+    # 파일이 있는 공고만 추출
+    need_download = [
+        n for n in final
+        if any(fi.get("id") and not fi.get("local") for fi in n.get("files", []))
+    ]
+    print(f"\n[5단계] 파일 다운로드 (Playwright)")
+    print(f"  → 다운로드 필요: {len(need_download)}건")
+
+    file_count = 0
+
+    if need_download:
+        async with async_playwright() as pw:
+            browser = await pw.chromium.launch(headless=True, args=BROWSER_ARGS)
+            context = await browser.new_context(
+                locale="ko-KR",
+                timezone_id="Asia/Seoul",
+                user_agent=USER_AGENT,
+                accept_downloads=True,
+                extra_http_headers={
+                    "Accept-Language": "ko-KR,ko;q=0.9",
+                    "Referer": BASE_URL,
+                },
+            )
+            await context.add_init_script(
+                "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
+            )
+            page = await context.new_page()
+
+            for n in need_download:
+                nid = n["id"]
+                print(f"\n  파일 다운로드: {n['title'][:45]}")
+                for fi in n.get("files", []):
+                    if not fi.get("id") or fi.get("local"):
+                        continue
+                    local = await download_file(page, nid, fi)
+                    if local:
+                        fi["local"] = local
+                        file_count += 1
+                    await asyncio.sleep(DELAY_FILE)
+
+            await browser.close()
+
+        # 파일 다운로드 결과 최종 저장
+        save_notices(final)
+
+    # 완료
     print("\n" + "=" * 60)
-    print(f"완료! 신규: {new_count}건 | 파일: {file_count}개 | 전체: {len(final)}건")
+    print(f"완료!")
+    print(f"  신규 공고:     {new_count}건")
+    print(f"  파일 다운로드: {file_count}개")
+    print(f"  전체 공고:     {len(final)}건")
     print("=" * 60)
 
 if __name__ == "__main__":
