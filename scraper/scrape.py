@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-대법원 파산·회생 자산매각 공고 스크래퍼 v5 (하이브리드)
-- 목록/상세: requests + BeautifulSoup
-- 파일 다운로드: Playwright
+대법원 파산·회생 자산매각 공고 스크래퍼 v6
+- 목록/상세: Cloudflare Worker 프록시 경유 (IP 차단 우회)
+- 파일 다운로드: Playwright (javascript:download() 처리)
 - 파일명: 파일ID.확장자 (짧고 안전)
 - 실패 처리: 3번 시도 → 30초 대기 → 3번 더 → FAILED 기록
 - 재실행 시: 성공 파일 스킵, FAILED 파일 재시도
@@ -15,6 +15,7 @@ import shutil
 import time
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import quote
 
 import requests
 from bs4 import BeautifulSoup
@@ -35,11 +36,18 @@ LIST_URL     = BASE_URL + "/portal/notice/realestate/RealNoticeList.work"
 VIEW_URL     = BASE_URL + "/portal/notice/realestate/RealNoticeView.work"
 DOWNLOAD_URL = BASE_URL + "/portal/notice/realestate/RealNoticeFileDown.work"
 
+# ── Cloudflare Worker 프록시 ──────────────────────────────────────────────────
+PROXY_BASE = "https://scourt-proxy.gumago1357.workers.dev"
+
+def proxy(url: str) -> str:
+    """대법원 URL을 Cloudflare Worker 프록시 URL로 변환"""
+    return f"{PROXY_BASE}/?url={quote(url, safe='')}"
+
 # ── 딜레이 설정 ───────────────────────────────────────────────────────────────
-DELAY_LIST        = 2.0    # 목록 페이지 간
-DELAY_DETAIL      = 3.0    # 상세 페이지 간
-DELAY_FILE        = 5.0    # 파일 다운로드 간
-DELAY_RETRY_PAUSE = 30.0   # 1차 실패 후 2차 시도 전 대기
+DELAY_LIST        = 2.0
+DELAY_DETAIL      = 3.0
+DELAY_FILE        = 5.0
+DELAY_RETRY_PAUSE = 30.0
 
 # ── HTTP 세션 ─────────────────────────────────────────────────────────────────
 SESSION = requests.Session()
@@ -51,13 +59,20 @@ SESSION.headers.update({
     ),
     "Accept":          "text/html,application/xhtml+xml,*/*;q=0.8",
     "Accept-Language": "ko-KR,ko;q=0.9",
-    "Referer":         BASE_URL,
 })
 
 def get_page(url: str, params: dict = None, retries: int = 3) -> BeautifulSoup | None:
+    """Cloudflare Worker 프록시를 통해 페이지 가져오기"""
+    # params가 있으면 URL에 직접 붙이기
+    if params:
+        qs = "&".join(f"{k}={v}" for k, v in params.items())
+        url = f"{url}?{qs}"
+
+    proxied_url = proxy(url)
+
     for attempt in range(retries):
         try:
-            resp = SESSION.get(url, params=params, timeout=30)
+            resp = SESSION.get(proxied_url, timeout=30)
             resp.raise_for_status()
             resp.encoding = "utf-8"
             return BeautifulSoup(resp.text, "html.parser")
@@ -84,7 +99,6 @@ def is_broken_file(path: Path) -> bool:
         return False
 
 def purge_broken_files() -> int:
-    """깨진 파일(HTML 에러페이지) 삭제"""
     removed = 0
     if not FILES_DIR.exists():
         return 0
@@ -99,16 +113,16 @@ def purge_broken_files() -> int:
 def local_file_ok(local_val: str) -> bool:
     """
     local 필드 상태 확인
-      - ""        → 아직 시도 안 함
-      - "FAILED"  → 실패 기록 → 재시도 대상
-      - "파일명"  → 실제 파일 존재 확인
+      ""       → 아직 시도 안 함
+      "FAILED" → 실패 기록 → 재시도 대상
+      "파일명" → 실제 파일 존재 확인
     """
     if not local_val or local_val == "FAILED":
         return False
     path = FILES_DIR / local_val
     return path.exists() and not is_broken_file(path)
 
-# ── 목록 수집 (requests) ──────────────────────────────────────────────────────
+# ── 목록 수집 ─────────────────────────────────────────────────────────────────
 def get_total_pages(soup: BeautifulSoup) -> int:
     nums = []
     for a in soup.find_all("a", href=True):
@@ -164,7 +178,7 @@ def parse_list_page(soup: BeautifulSoup) -> list[dict]:
     return notices
 
 def scrape_all_list() -> list[dict]:
-    print(f"  URL: {LIST_URL}")
+    print(f"  프록시 URL: {proxy(LIST_URL)[:60]}...")
     soup = get_page(LIST_URL)
     if not soup:
         print("  [오류] 목록 페이지 로드 실패")
@@ -184,7 +198,7 @@ def scrape_all_list() -> list[dict]:
     print(f"\n  → 총 {len(all_notices)}건")
     return all_notices
 
-# ── 상세 수집 (requests) ──────────────────────────────────────────────────────
+# ── 상세 수집 ─────────────────────────────────────────────────────────────────
 def scrape_detail(seq_id: str) -> dict:
     params = {
         "pageIndex": "1", "seq_id": seq_id,
@@ -218,26 +232,20 @@ def scrape_detail(seq_id: str) -> dict:
             continue
         seen_ids.add(file_id)
 
-        # 확장자 추출
-        ext = "pdf"   # 기본값
+        ext = "pdf"
         nl  = file_name.lower()
         if nl.endswith((".hwp", ".hwpx")):
             ext = "hwp"
         elif nl.endswith((".docx", ".doc")):
             ext = "docx"
-        elif nl.endswith(".pdf"):
-            ext = "pdf"
-
-        # 파일명: 파일ID.확장자 (짧고 안전)
-        safe_local = f"{file_id}.{ext}"
 
         result["files"].append({
-            "id":       file_id,
-            "name":     file_name,          # 원본 파일명 (표시용)
-            "url":      f"{DOWNLOAD_URL}?seq_id={seq_id}&file_id={file_id}",
-            "ext":      ext,
-            "local":    "",                 # 다운로드 후 채워짐
-            "local_name": safe_local,       # 저장할 파일명 (짧은 버전)
+            "id":         file_id,
+            "name":       file_name,
+            "url":        f"{DOWNLOAD_URL}?seq_id={seq_id}&file_id={file_id}",
+            "ext":        ext,
+            "local":      "",
+            "local_name": f"{file_id}.{ext}",   # 짧은 파일명
         })
 
     if result["files"]:
@@ -258,10 +266,7 @@ USER_AGENT = (
 )
 
 async def try_download_once(page: Page, seq_id: str, file_info: dict) -> str:
-    """
-    파일 다운로드 1회 시도.
-    성공 시 로컬 파일명 반환, 실패 시 "" 반환.
-    """
+    """파일 다운로드 1회 시도. 성공 시 로컬 파일명, 실패 시 "" 반환"""
     file_id    = file_info["id"]
     file_name  = file_info["name"]
     file_url   = file_info["url"]
@@ -318,14 +323,11 @@ async def try_download_once(page: Page, seq_id: str, file_info: dict) -> str:
 
 async def download_file_with_retry(page: Page, seq_id: str, file_info: dict) -> str:
     """
-    다운로드 재시도 로직:
-      1차: 3번 시도
-      실패 → 30초 대기
-      2차: 3번 더 시도
-      그래도 실패 → "FAILED" 반환
+    1차: 3번 시도
+    실패 → 30초 대기
+    2차: 3번 더
+    그래도 실패 → "FAILED"
     """
-    file_name = file_info["name"]
-
     # 1차 시도 (3번)
     for i in range(1, 4):
         print(f"    시도 {i}/3 (1차)")
@@ -348,7 +350,7 @@ async def download_file_with_retry(page: Page, seq_id: str, file_info: dict) -> 
         if i < 3:
             await asyncio.sleep(DELAY_FILE)
 
-    print(f"    → 최종 실패: {file_name} → FAILED 기록")
+    print(f"    → 최종 실패 → FAILED 기록")
     return "FAILED"
 
 # ── 데이터 저장/로드 ──────────────────────────────────────────────────────────
@@ -377,25 +379,21 @@ def save_notices(notices: list[dict]):
 # ── 메인 ─────────────────────────────────────────────────────────────────────
 async def main():
     print("=" * 60)
-    print("대법원 파산·회생 자산매각 공고 스크래퍼 v5")
+    print("대법원 파산·회생 자산매각 공고 스크래퍼 v6")
     print(f"실행 시각: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("=" * 60)
 
-    # 1단계: 깨진 파일 정리
     print("\n[1단계] 깨진 파일 정리")
     removed = purge_broken_files()
     print(f"  → {removed}개 삭제")
 
-    # 2단계: 기존 데이터 로드
     existing = load_existing()
     print(f"\n[2단계] 기존 공고: {len(existing)}건")
 
-    # 3단계: 목록 수집
-    print(f"\n[3단계] 목록 수집 (requests)")
+    print(f"\n[3단계] 목록 수집 (Cloudflare 프록시)")
     all_raw = scrape_all_list()
 
-    # 4단계: 상세 수집
-    print(f"\n[4단계] 상세 정보 수집 (requests)")
+    print(f"\n[4단계] 상세 정보 수집 (Cloudflare 프록시)")
     final: list[dict] = []
     new_count = 0
 
@@ -421,8 +419,7 @@ async def main():
     save_notices(final)
     print(f"  → 신규 상세 수집: {new_count}건")
 
-    # 5단계: 파일 다운로드
-    # 대상: local이 비어있거나 "FAILED" 인 파일
+    # 파일 다운로드 대상: local이 비어있거나 FAILED인 것
     need_download = [
         n for n in final
         if any(
@@ -434,8 +431,8 @@ async def main():
     print(f"\n[5단계] 파일 다운로드 (Playwright)")
     print(f"  → 다운로드 대상: {len(need_download)}건")
 
-    file_ok    = 0
-    file_fail  = 0
+    file_ok   = 0
+    file_fail = 0
 
     if need_download:
         async with async_playwright() as pw:
@@ -462,13 +459,12 @@ async def main():
                 for fi in n.get("files", []):
                     if not fi.get("id"):
                         continue
-                    # 이미 성공한 파일은 스킵
                     if local_file_ok(fi.get("local", "")):
                         print(f"    [스킵] {fi['local']} (이미 존재)")
                         continue
 
                     result = await download_file_with_retry(page, nid, fi)
-                    fi["local"] = result  # 성공: 파일명 / 실패: "FAILED"
+                    fi["local"] = result
 
                     if result and result != "FAILED":
                         file_ok += 1
@@ -477,16 +473,14 @@ async def main():
 
                     await asyncio.sleep(DELAY_FILE)
 
-                # 10건마다 중간 저장
                 if ni % 10 == 0:
                     save_notices(final)
-                    print(f"  [중간저장] 파일 {ni}건 처리")
+                    print(f"  [중간저장] {ni}건 처리")
 
             await browser.close()
 
         save_notices(final)
 
-    # 완료
     failed_total = sum(
         1 for n in final
         for fi in n.get("files", [])
@@ -495,11 +489,11 @@ async def main():
 
     print("\n" + "=" * 60)
     print(f"완료!")
-    print(f"  신규 공고:       {new_count}건")
-    print(f"  파일 성공:       {file_ok}개")
+    print(f"  신규 공고:        {new_count}건")
+    print(f"  파일 성공:        {file_ok}개")
     print(f"  파일 실패(FAILED): {file_fail}개")
-    print(f"  전체 FAILED 누적: {failed_total}개 (다음 실행 때 재시도)")
-    print(f"  전체 공고:       {len(final)}건")
+    print(f"  전체 FAILED 누적:  {failed_total}개 (다음 실행 때 재시도)")
+    print(f"  전체 공고:        {len(final)}건")
     print("=" * 60)
 
 if __name__ == "__main__":
