@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
 """
-대법원 파산·회생 자산매각 공고 스크래퍼 (Playwright 버전)
+대법원 파산·회생 자산매각 공고 스크래퍼 v2 (Playwright)
+- 실제 URL 구조 반영: RealNoticeList.work / RealNoticeView.work
+- 파일 다운로드: RealNoticeFileDown.work?seq_id=...&file_id=...
 """
 
 import asyncio
 import json
-import os
 import re
 import shutil
 from datetime import datetime
 from pathlib import Path
 
-from playwright.async_api import async_playwright, Download, Page, TimeoutError as PWTimeout
+from playwright.async_api import async_playwright, Page, TimeoutError as PWTimeout
 
 BASE_DIR     = Path(__file__).parent.parent
 DATA_DIR     = BASE_DIR / "data"
@@ -21,19 +22,18 @@ NOTICES_JSON = DATA_DIR / "notices.json"
 DATA_DIR.mkdir(exist_ok=True)
 FILES_DIR.mkdir(parents=True, exist_ok=True)
 
-BASE_URL      = "https://www.scourt.go.kr"
-LIST_URL      = f"{BASE_URL}/portal/notice/realestate/RealNoticeList.work"
-DETAIL_PREFIX = f"{BASE_URL}/portal/notice/realestate/RealNoticeView.work"
+BASE_URL     = "https://www.scourt.go.kr"
+LIST_URL     = BASE_URL + "/portal/notice/realestate/RealNoticeList.work"
+VIEW_URL     = BASE_URL + "/portal/notice/realestate/RealNoticeView.work"
+DOWNLOAD_URL = BASE_URL + "/portal/notice/realestate/RealNoticeFileDown.work"
 
 MIN_VALID_BYTES = 5_000
 HTML_SIGNATURES = (b"<!DOCTYPE", b"<html", b"<HTML", b"<!doctype")
 
-
 def is_broken_file(path: Path) -> bool:
     if not path.exists():
         return False
-    size = path.stat().st_size
-    if size < MIN_VALID_BYTES:
+    if path.stat().st_size < MIN_VALID_BYTES:
         return True
     try:
         with open(path, "rb") as f:
@@ -41,7 +41,6 @@ def is_broken_file(path: Path) -> bool:
         return any(sig in header for sig in HTML_SIGNATURES)
     except OSError:
         return False
-
 
 def purge_broken_files() -> int:
     removed = 0
@@ -51,10 +50,9 @@ def purge_broken_files() -> int:
         if f.is_file() and is_broken_file(f):
             size = f.stat().st_size
             f.unlink()
-            print(f"  [삭제] 깨진 파일: {f.name} ({size} bytes)")
+            print(f"  [삭제] {f.name} ({size} bytes)")
             removed += 1
     return removed
-
 
 BROWSER_ARGS = [
     "--no-sandbox",
@@ -62,7 +60,6 @@ BROWSER_ARGS = [
     "--disable-dev-shm-usage",
     "--disable-gpu",
     "--disable-blink-features=AutomationControlled",
-    "--window-size=1280,900",
 ]
 
 USER_AGENT = (
@@ -71,311 +68,194 @@ USER_AGENT = (
     "Chrome/125.0.0.0 Safari/537.36"
 )
 
-
 async def get_total_pages(page: Page) -> int:
     try:
-        await page.wait_for_selector("table", timeout=15000)
-    except PWTimeout:
-        return 1
-
-    try:
-        hrefs = await page.eval_on_selector_all(
-            "a[href*='pageIndex'], a[onclick*='goPage'], a[onclick*='page']",
-            "els => els.map(e => e.getAttribute('href') || e.getAttribute('onclick') || '')"
-        )
-        nums = []
-        for h in hrefs:
-            for m in re.finditer(r"(?:pageIndex|goPage)\s*[=(,]\s*(\d+)", h):
-                nums.append(int(m.group(1)))
+        content = await page.content()
+        nums = re.findall(r"pageIndex=(\d+)", content)
         if nums:
-            return max(nums)
+            return max(int(n) for n in nums)
     except Exception:
         pass
-
-    try:
-        paging_text = await page.evaluate("""
-            () => {
-                const el = document.querySelector('.paging, .pagination, #paging, .page-wrap');
-                return el ? el.innerText : document.body.innerText;
-            }
-        """)
-        m = re.search(r"(\d+)\s*/\s*(\d+)\s*페이지", paging_text)
-        if m:
-            return int(m.group(2))
-        nums = re.findall(r"\b(\d+)\b", paging_text)
-        if nums:
-            return max(int(n) for n in nums if int(n) < 10000)
-    except Exception:
-        pass
-
     return 1
-
 
 async def scrape_list_page(page: Page, page_idx: int) -> list[dict]:
     if page_idx > 1:
-        navigated = False
-        for expr in [
-            f"goPage({page_idx})",
-            f"fn_goPage({page_idx})",
-            f"goList({page_idx})",
-        ]:
-            try:
-                await page.evaluate(expr)
-                await page.wait_for_load_state("networkidle", timeout=20000)
-                navigated = True
-                break
-            except Exception:
-                continue
+        url = f"{LIST_URL}?pageIndex={page_idx}"
+        await page.goto(url, wait_until="domcontentloaded", timeout=60000)
+        await page.wait_for_timeout(1000)
 
-        if not navigated:
-            url = f"{LIST_URL}&pageIndex={page_idx}"
-            await page.goto(url, wait_until="networkidle", timeout=25000)
-
+    content = await page.content()
     notices = []
-    selectors = [
-        "table.bbsList tbody tr",
-        "table.bbs_list tbody tr",
-        "#bbsList tbody tr",
-        "table tbody tr",
-    ]
 
-    rows = None
-    for sel in selectors:
-        candidate = page.locator(sel)
-        if await candidate.count() > 0:
-            rows = candidate
-            break
+    row_pattern = re.compile(r'<tr[^>]*>(.*?)</tr>', re.DOTALL | re.IGNORECASE)
+    link_pattern = re.compile(r'seq_id=(\d+)', re.IGNORECASE)
+    td_pattern   = re.compile(r'<td[^>]*>(.*?)</td>', re.DOTALL | re.IGNORECASE)
+    tag_pattern  = re.compile(r'<[^>]+>')
 
-    if rows is None:
-        print(f"  [경고] 페이지 {page_idx}: 테이블 행을 찾을 수 없음")
-        return []
-
-    count = await rows.count()
-    for i in range(count):
-        row = rows.nth(i)
-        cells = row.locator("td")
-        cell_count = await cells.count()
-        if cell_count < 4:
+    for row_m in row_pattern.finditer(content):
+        row_html = row_m.group(1)
+        link_m   = link_pattern.search(row_html)
+        if not link_m:
             continue
 
-        try:
-            title_el  = None
-            title     = ""
-            notice_id = ""
+        seq_id = link_m.group(1)
+        tds    = td_pattern.findall(row_html)
+        if len(tds) < 4:
+            continue
 
-            for cell_idx in range(cell_count):
-                link = cells.nth(cell_idx).locator("a").first
-                if await link.count() > 0:
-                    t = (await link.inner_text()).strip()
-                    if t and len(t) > 3:
-                        title_el  = link
-                        title     = t
-                        href      = await link.get_attribute("href") or ""
-                        onclick   = await link.get_attribute("onclick") or ""
-                        combined  = href + onclick
+        def clean(html):
+            return tag_pattern.sub('', html).strip()
 
-                        m = re.search(r"['\"](\d{6,})['\"]", combined)
-                        if not m:
-                            m = re.search(r"(\d{6,})", combined)
-                        if m:
-                            notice_id = m.group(1)
-                        break
+        texts = [clean(td) for td in tds]
 
-            if not title or not notice_id:
-                continue
+        title = ""
+        for td in tds:
+            if 'seq_id=' in td:
+                title = clean(td)
+                break
+        if not title and texts:
+            title = max(texts, key=len)
 
-            texts = []
-            for ci in range(cell_count):
-                t = (await cells.nth(ci).inner_text()).strip()
-                texts.append(t)
+        date = ""
+        for t in texts:
+            if re.match(r'\d{4}\.\d{2}\.\d{2}', t):
+                date = t
+                break
 
-            court = texts[1] if len(texts) > 1 else ""
-            org   = texts[2] if len(texts) > 2 else ""
-            date  = texts[-1] if texts else ""
-
-            notices.append({
-                "id":    notice_id,
-                "num":   texts[0] if texts else "",
-                "court": court,
-                "org":   org,
-                "title": title,
-                "date":  date,
-                "files": [],
-            })
-
-        except Exception as e:
-            print(f"  [경고] 행 {i} 파싱 오류: {e}")
+        notices.append({
+            "id":    seq_id,
+            "seq_id": seq_id,
+            "court": texts[1] if len(texts) > 1 else "",
+            "org":   texts[2] if len(texts) > 2 else "",
+            "title": title,
+            "date":  date,
+            "files": [],
+        })
 
     return notices
 
-
-async def scrape_detail(page: Page, notice: dict) -> dict:
-    notice_id  = notice["id"]
-    detail_url = f"{DETAIL_PREFIX}?gubun=DG18&searchSeq={notice_id}"
+async def scrape_detail(page: Page, seq_id: str) -> dict:
+    detail_url = f"{VIEW_URL}?pageIndex=1&seq_id={seq_id}&bub_cd=&searchWord=&searchOption="
 
     for attempt in range(2):
         try:
             await page.goto(
                 detail_url,
-                wait_until="networkidle" if attempt == 0 else "domcontentloaded",
-                timeout=25000,
+                wait_until="domcontentloaded" if attempt else "networkidle",
+                timeout=60000,
             )
             break
         except PWTimeout:
             if attempt == 1:
-                print(f"  [타임아웃] 상세 페이지 로드 실패: {notice_id}")
-                return notice
+                return {"files": [], "end_date": "", "phone": "", "detail_url": detail_url}
 
-    content = ""
-    for sel in [".bbsView", ".viewContent", "#viewContent", ".view_content", ".bbs_view"]:
-        try:
-            el = page.locator(sel).first
-            if await el.count() > 0:
-                content = (await el.inner_text()).strip()
-                break
-        except Exception:
+    content = await page.content()
+    result  = {"files": [], "end_date": "", "phone": "", "detail_url": detail_url}
+
+    for label, key in [("공고만료일", "end_date"), ("전화번호", "phone")]:
+        m = re.search(label + r'</th>\s*<td[^>]*>(.*?)</td>', content, re.DOTALL | re.IGNORECASE)
+        if m:
+            result[key] = re.sub(r'<[^>]+>', '', m.group(1)).strip()
+
+    dl_pattern = re.compile(r"download\s*\(\s*'([^']+)'\s*,\s*'([^']+)'\s*\)", re.IGNORECASE)
+    seen_ids   = set()
+    for m in dl_pattern.finditer(content):
+        file_id   = m.group(1).strip()
+        file_name = m.group(2).strip()
+        if file_id in seen_ids:
             continue
+        seen_ids.add(file_id)
 
-    files = []
-    try:
-        html_content = await page.content()
-        pattern = re.compile(
-            r"download\s*\(\s*['\"]?([A-Za-z0-9_\-]+)['\"]?\s*,\s*['\"]([^'\"]+)['\"]",
-            re.IGNORECASE,
-        )
-        seen_ids = set()
-        for m in pattern.finditer(html_content):
-            fid   = m.group(1).strip()
-            fname = m.group(2).strip()
-            if fid and fid not in seen_ids:
-                seen_ids.add(fid)
-                files.append({"id": fid, "name": fname, "local": ""})
-    except Exception as e:
-        print(f"  [경고] 첨부파일 파싱 오류: {e}")
+        ext = ""
+        nl  = file_name.lower()
+        if nl.endswith(".pdf"):
+            ext = "pdf"
+        elif nl.endswith((".hwp", ".hwpx")):
+            ext = "hwp"
+        elif nl.endswith((".docx", ".doc")):
+            ext = "docx"
 
-    notice["content"] = content
-    notice["files"]   = files
+        result["files"].append({
+            "id":    file_id,
+            "name":  file_name,
+            "url":   f"{DOWNLOAD_URL}?seq_id={seq_id}&file_id={file_id}",
+            "ext":   ext,
+            "local": "",
+        })
 
-    if files:
-        print(f"    → 첨부파일 {len(files)}개: {[f['name'] for f in files]}")
+    if result["files"]:
+        print(f"    → 첨부파일 {len(result['files'])}개: {[f['name'] for f in result['files']]}")
 
-    return notice
+    return result
 
-
-async def download_file(page: Page, notice_id: str, file_info: dict) -> str:
+async def download_file(page: Page, seq_id: str, file_info: dict) -> str:
     file_id   = file_info.get("id", "")
     file_name = file_info.get("name", "unknown")
+    file_url  = file_info.get("url", "")
 
-    if not file_id:
+    if not file_id or not file_url:
         return ""
 
     safe_name  = re.sub(r'[\\/*?:"<>|\s]', "_", file_name)
-    local_name = f"{file_id}_{safe_name}"
+    local_name = f"{seq_id}_{file_id}_{safe_name}"
     local_path = FILES_DIR / local_name
 
     if local_path.exists() and not is_broken_file(local_path):
         size_kb = local_path.stat().st_size // 1024
-        print(f"    [스킵] 이미 존재: {local_name} ({size_kb} KB)")
+        print(f"    [스킵] {local_name} ({size_kb} KB)")
         return local_name
 
-    detail_url = f"{DETAIL_PREFIX}?gubun=DG18&searchSeq={notice_id}"
+    detail_url = f"{VIEW_URL}?pageIndex=1&seq_id={seq_id}&bub_cd=&searchWord=&searchOption="
+
+    # 방법 1: javascript:download() 트리거
     try:
-        await page.goto(detail_url, wait_until="domcontentloaded", timeout=20000)
-    except Exception as e:
-        print(f"    [오류] 상세페이지 이동 실패: {e}")
-        return ""
-
-    fn_exists = await page.evaluate("typeof download === 'function'")
-    if not fn_exists:
-        print(f"    [경고] download() 함수 없음: {file_name}")
-        return await download_file_via_form(page, notice_id, file_id, file_name, local_path)
-
-    try:
-        async with page.expect_download(timeout=90_000) as dl_info:
-            for call in [
-                f"download('{file_id}', '{file_name}')",
-                f"download('{file_id}')",
-                f"fnDownload('{file_id}', '{file_name}')",
-            ]:
-                try:
-                    await page.evaluate(call)
-                    break
-                except Exception:
-                    continue
-
-        dl: Download = await dl_info.value
-
-        suggested = dl.suggested_filename
-        if suggested:
-            safe_suggested = re.sub(r'[\\/*?:"<>|\s]', "_", suggested)
-            local_name = f"{file_id}_{safe_suggested}"
+        await page.goto(detail_url, wait_until="domcontentloaded", timeout=60000)
+        fn_exists = await page.evaluate("typeof download === 'function'")
+        if fn_exists:
+            async with page.expect_download(timeout=90_000) as dl_info:
+                await page.evaluate(f"download('{file_id}', '{file_name}')")
+            dl         = await dl_info.value
+            suggested  = dl.suggested_filename or file_name
+            safe_sug   = re.sub(r'[\\/*?:"<>|\s]', "_", suggested)
+            local_name = f"{seq_id}_{file_id}_{safe_sug}"
             local_path = FILES_DIR / local_name
-
-        tmp = Path(await dl.path())
-        if not tmp or not tmp.exists():
-            print(f"    [실패] 임시 파일 없음: {file_name}")
-            return ""
-
-        shutil.move(str(tmp), str(local_path))
-
-        if is_broken_file(local_path):
-            size = local_path.stat().st_size
-            local_path.unlink(missing_ok=True)
-            print(f"    [실패] 에러페이지 수신 ({size} bytes): {file_name}")
-            return ""
-
-        size_kb = local_path.stat().st_size // 1024
-        print(f"    [완료] {local_name} ({size_kb} KB)")
-        return local_name
-
+            tmp        = Path(await dl.path())
+            if tmp and tmp.exists():
+                shutil.move(str(tmp), str(local_path))
+                if not is_broken_file(local_path):
+                    print(f"    [완료] {local_name} ({local_path.stat().st_size//1024} KB)")
+                    return local_name
+                local_path.unlink(missing_ok=True)
     except PWTimeout:
-        print(f"    [타임아웃] 90초 초과: {file_name}")
-        return ""
+        print(f"    [타임아웃] download() 방식: {file_name}")
     except Exception as e:
-        print(f"    [오류] {file_name}: {type(e).__name__}: {e}")
-        return ""
+        print(f"    [오류] download() 방식: {e}")
 
-
-async def download_file_via_form(
-    page: Page, notice_id: str, file_id: str, file_name: str, local_path: Path
-) -> str:
-    DOWNLOAD_ACTION = f"{BASE_URL}/portal/download/FileDownAction.work"
-
+    # 방법 2: 직접 URL 접근
     try:
         async with page.expect_download(timeout=60_000) as dl_info:
-            await page.evaluate(f"""
-                () => {{
-                    const form = document.createElement('form');
-                    form.method = 'POST';
-                    form.action = '{DOWNLOAD_ACTION}';
-                    const inp = document.createElement('input');
-                    inp.type  = 'hidden';
-                    inp.name  = 'fileId';
-                    inp.value = '{file_id}';
-                    form.appendChild(inp);
-                    document.body.appendChild(form);
-                    form.submit();
-                }}
-            """)
-
-        dl: Download = await dl_info.value
-        tmp = Path(await dl.path())
+            await page.goto(file_url, wait_until="domcontentloaded", timeout=60000)
+        dl         = await dl_info.value
+        suggested  = dl.suggested_filename or file_name
+        safe_sug   = re.sub(r'[\\/*?:"<>|\s]', "_", suggested)
+        local_name = f"{seq_id}_{file_id}_{safe_sug}"
+        local_path = FILES_DIR / local_name
+        tmp        = Path(await dl.path())
         if tmp and tmp.exists():
             shutil.move(str(tmp), str(local_path))
             if not is_broken_file(local_path):
-                size_kb = local_path.stat().st_size // 1024
-                print(f"    [완료/폼] {local_path.name} ({size_kb} KB)")
-                return local_path.name
-            else:
-                local_path.unlink(missing_ok=True)
-
+                print(f"    [완료/직접] {local_name} ({local_path.stat().st_size//1024} KB)")
+                return local_name
+            local_path.unlink(missing_ok=True)
+    except PWTimeout:
+        print(f"    [타임아웃] 직접 URL: {file_name}")
     except Exception as e:
-        print(f"    [폼 폴백 실패] {file_name}: {e}")
+        print(f"    [오류] 직접 URL: {e}")
 
+    print(f"    [실패] {file_name}")
     return ""
 
-
-def load_existing_notices() -> dict[str, dict]:
+def load_existing() -> dict[str, dict]:
     if not NOTICES_JSON.exists():
         return {}
     try:
@@ -387,7 +267,6 @@ def load_existing_notices() -> dict[str, dict]:
         print(f"[경고] 기존 데이터 로드 실패: {e}")
         return {}
 
-
 def save_notices(notices: list[dict]):
     output = {
         "updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -396,20 +275,19 @@ def save_notices(notices: list[dict]):
     }
     with open(NOTICES_JSON, "w", encoding="utf-8") as f:
         json.dump(output, f, ensure_ascii=False, indent=2)
-    print(f"[저장] {NOTICES_JSON} → {len(notices)}건")
-
+    print(f"[저장] notices.json → {len(notices)}건")
 
 async def main():
     print("=" * 60)
-    print("대법원 파산·회생 자산매각 공고 스크래퍼 (Playwright)")
+    print("대법원 파산·회생 자산매각 공고 스크래퍼 v2")
     print(f"실행 시각: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("=" * 60)
 
-    print("\n[1단계] 깨진 첨부파일 정리")
+    print("\n[1단계] 깨진 파일 정리")
     removed = purge_broken_files()
-    print(f"  → {removed}개 삭제 완료")
+    print(f"  → {removed}개 삭제")
 
-    existing = load_existing_notices()
+    existing = load_existing()
     print(f"\n[2단계] 기존 공고: {len(existing)}건")
 
     async with async_playwright() as pw:
@@ -420,49 +298,54 @@ async def main():
             user_agent=USER_AGENT,
             accept_downloads=True,
             extra_http_headers={
-                "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
-                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+                "Accept-Language": "ko-KR,ko;q=0.9",
+                "Accept": "text/html,application/xhtml+xml,*/*;q=0.8",
+                "Referer": BASE_URL,
             },
         )
-        await context.add_init_script("""
-            Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
-        """)
+        await context.add_init_script(
+            "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
+        )
         page = await context.new_page()
 
-        print(f"\n[3단계] 공고 목록 수집")
+        print(f"\n[3단계] 목록 수집")
         await page.goto(LIST_URL, wait_until="domcontentloaded", timeout=60000)
+        await page.wait_for_timeout(2000)
+
         total_pages = await get_total_pages(page)
         print(f"  → 총 {total_pages}페이지")
 
         all_raw: list[dict] = []
         for pg in range(1, total_pages + 1):
-            print(f"  수집 중: {pg}/{total_pages} 페이지", end="\r", flush=True)
+            print(f"  목록 {pg}/{total_pages}...", end="\r", flush=True)
             rows = await scrape_list_page(page, pg)
             all_raw.extend(rows)
             if pg < total_pages:
                 await asyncio.sleep(1.0)
 
-        print(f"\n  → 목록 총 {len(all_raw)}건")
+        print(f"\n  → 총 {len(all_raw)}건")
 
-        print(f"\n[4단계] 상세 정보 + 파일 다운로드")
-        final_notices: list[dict] = []
+        print(f"\n[4단계] 상세 + 파일 다운로드")
+        final: list[dict] = []
         new_count  = 0
         file_count = 0
 
         for idx, raw in enumerate(all_raw, 1):
             nid = raw["id"]
-            print(f"\n  [{idx:3d}/{len(all_raw)}] {raw['title'][:45]}")
+            print(f"\n  [{idx:3d}/{len(all_raw)}] {raw['title'][:50]}")
 
             if nid in existing:
-                notice = existing[nid]
-                missing = [fi for fi in notice.get("files", []) if fi.get("id") and not fi.get("local")]
+                notice  = existing[nid]
+                missing = [fi for fi in notice.get("files", [])
+                           if fi.get("id") and not fi.get("local")]
                 if not missing:
-                    print("    → 기존 데이터 (스킵)")
-                    final_notices.append(notice)
+                    print("    → 스킵")
+                    final.append(notice)
                     continue
-
             else:
-                notice = await scrape_detail(page, raw)
+                detail = await scrape_detail(page, nid)
+                raw.update(detail)
+                notice = raw
                 new_count += 1
                 await asyncio.sleep(1.0)
 
@@ -475,17 +358,16 @@ async def main():
                     file_count += 1
                 await asyncio.sleep(1.5)
 
-            final_notices.append(notice)
+            final.append(notice)
 
         await browser.close()
 
-    print(f"\n[5단계] 결과 저장")
-    save_notices(final_notices)
+    print(f"\n[5단계] 저장")
+    save_notices(final)
 
     print("\n" + "=" * 60)
-    print(f"완료! 신규: {new_count}건 | 파일: {file_count}개 | 전체: {len(final_notices)}건")
+    print(f"완료! 신규: {new_count}건 | 파일: {file_count}개 | 전체: {len(final)}건")
     print("=" * 60)
-
 
 if __name__ == "__main__":
     asyncio.run(main())
