@@ -184,8 +184,8 @@ def download_files(items):
             if not file_id:
                 continue
             local_path = os.path.join(FILES_DIR, file_id)
-            if os.path.exists(local_path):
-                # 이미 있으면 스킵
+            if os.path.exists(local_path) and os.path.getsize(local_path) > 10000:
+                # 이미 있고 정상 크기면 스킵
                 f["local_path"] = f"files/{file_id}"
                 continue
             print(f"    파일 다운로드: {f['name']}")
