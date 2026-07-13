@@ -4,7 +4,9 @@ import json
 import time
 import re
 import os
+import subprocess
 from datetime import datetime, timezone, timedelta
+from urllib.parse import urlencode, quote
 
 BASE_URL = "https://www.scourt.go.kr"
 LIST_URL = BASE_URL + "/portal/notice/realestate/RealNoticeList.work"
@@ -15,24 +17,41 @@ PROXY_URL = "https://scourt-proxy.gumago1357.workers.dev"
 
 KST = timezone(timedelta(hours=9))
 
+# 파일 저장 경로 (GitHub 저장소 내)
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+REPO_DIR = os.path.join(SCRIPT_DIR, "..")
+FILES_DIR = os.path.join(REPO_DIR, "docs", "files")
 
-def fetch(url, params=None, encoding="euc-kr"):
+
+def fetch_html(url, params=None, encoding="euc-kr"):
     if params:
-        from urllib.parse import urlencode
         full_url = url + "?" + urlencode(params)
     else:
         full_url = url
-
-    proxy_request_url = PROXY_URL + "?url=" + requests.utils.quote(full_url, safe="")
-
+    proxy_url = PROXY_URL + "?url=" + quote(full_url, safe="")
     for attempt in range(3):
         try:
-            resp = requests.get(proxy_request_url, timeout=30)
+            resp = requests.get(proxy_url, timeout=30)
             resp.encoding = encoding
             return BeautifulSoup(resp.text, "html.parser")
         except Exception as e:
-            print(f"  재시도 {attempt+1}/3: {e}")
+            print(f"  HTML 재시도 {attempt+1}/3: {e}")
             time.sleep(5)
+    return None
+
+
+def fetch_file(file_id):
+    """파일을 프록시를 통해 다운로드"""
+    file_url = FILE_BASE_URL + file_id
+    proxy_url = PROXY_URL + "?url=" + quote(file_url, safe="")
+    for attempt in range(3):
+        try:
+            resp = requests.get(proxy_url, timeout=60)
+            if resp.status_code == 200 and len(resp.content) > 100:
+                return resp.content
+        except Exception as e:
+            print(f"  파일 다운로드 재시도 {attempt+1}/3: {e}")
+            time.sleep(3)
     return None
 
 
@@ -41,13 +60,11 @@ def get_total_pages(soup):
         return 1
     last = soup.select_one('a[title="마지막 페이지"]')
     if last:
-        href = last.get("href", "")
-        m = re.search(r"pageIndex=(\d+)", href)
+        m = re.search(r"pageIndex=(\d+)", last.get("href", ""))
         if m:
             return int(m.group(1))
-    pages = soup.select(".paginate a")
     nums = []
-    for p in pages:
+    for p in soup.select(".paginate a"):
         m = re.search(r"pageIndex=(\d+)", p.get("href", ""))
         if m:
             nums.append(int(m.group(1)))
@@ -57,9 +74,8 @@ def get_total_pages(soup):
 def parse_list_page(soup):
     if not soup:
         return []
-    rows = soup.select("table tbody tr")
     items = []
-    for row in rows:
+    for row in soup.select("table tbody tr"):
         cols = row.find_all("td")
         if len(cols) < 4:
             continue
@@ -73,53 +89,41 @@ def parse_list_page(soup):
         if not link_tag:
             continue
         title = link_tag.get_text(strip=True)
-        href = link_tag.get("href", "")
-        m = re.search(r"seq_id=(\d+)", href)
+        m = re.search(r"seq_id=(\d+)", link_tag.get("href", ""))
         if not m:
             continue
         seq_id = m.group(1)
-
         date = ""
         attach_count = 0
         if len(cols) >= 6:
-            date_text = cols[4].get_text(strip=True)
-            if re.match(r"\d{4}\.\d{2}\.\d{2}", date_text):
-                date = date_text
+            dt = cols[4].get_text(strip=True)
+            if re.match(r"\d{4}\.\d{2}\.\d{2}", dt):
+                date = dt
             m2 = re.search(r"\d+", cols[5].get_text(strip=True))
             if m2:
                 attach_count = int(m2.group())
         elif len(cols) == 5:
-            date_text = cols[4].get_text(strip=True)
-            if re.match(r"\d{4}\.\d{2}\.\d{2}", date_text):
-                date = date_text
-
+            dt = cols[4].get_text(strip=True)
+            if re.match(r"\d{4}\.\d{2}\.\d{2}", dt):
+                date = dt
         items.append({
-            "no": no,
-            "seq_id": seq_id,
-            "court": court,
-            "agency": agency,
-            "title": title,
-            "date": date,
+            "no": no, "seq_id": seq_id, "court": court,
+            "agency": agency, "title": title, "date": date,
             "attach_count": attach_count,
         })
     return items
 
 
-def parse_detail_page(seq_id, page_index=1):
-    params = {
-        "pageIndex": page_index,
-        "seq_id": seq_id,
-        "bub_cd": "",
-        "searchWord": "",
-        "searchOption": "",
-    }
-    soup = fetch(VIEW_URL, params=params)
+def parse_detail_page(seq_id):
+    soup = fetch_html(VIEW_URL, {
+        "pageIndex": 1, "seq_id": seq_id,
+        "bub_cd": "", "searchWord": "", "searchOption": "",
+    })
     if not soup:
         return {}
 
     result = {"phone": "", "end_date": "", "date": "", "files": []}
 
-    # 상세 페이지 테이블에서 정보 파싱
     for tbl in soup.find_all("table"):
         tds = tbl.find_all(["th", "td"])
         text = " ".join(td.get_text() for td in tds)
@@ -134,56 +138,90 @@ def parse_detail_page(seq_id, page_index=1):
                     result["phone"] = tds[i + 1].get_text(strip=True)
             break
 
-    # 첨부파일 파싱 - javascript:download('파일ID', '파일명') 패턴
-    for tag in soup.find_all(onclick=True):
-        onclick = tag.get("onclick", "")
-        _parse_download(onclick, result["files"])
-
-    for a in soup.find_all("a", href=True):
-        href = a.get("href", "")
-        if href.startswith("javascript:download"):
-            _parse_download(href, result["files"])
-
-    # a 태그 텍스트에서 파일명 추출 (onclick 방식)
-    for a in soup.find_all("a"):
-        onclick = a.get("onclick", "")
-        if "download" in onclick.lower():
-            _parse_download(onclick, result["files"])
-
-    # 중복 제거
+    # javascript:download('파일ID', '파일명') 패턴 파싱
     seen = set()
-    unique_files = []
-    for f in result["files"]:
-        key = f["url"]
-        if key not in seen:
-            seen.add(key)
-            unique_files.append(f)
-    result["files"] = unique_files
+    for text in [a.get("href", "") + " " + a.get("onclick", "") for a in soup.find_all("a")]:
+        _parse_download(text, result["files"], seen)
+    for tag in soup.find_all(onclick=True):
+        _parse_download(tag.get("onclick", ""), result["files"], seen)
 
     return result
 
 
-def _parse_download(text, files_list):
-    """javascript:download('파일ID', '파일명') 패턴 파싱"""
+def _parse_download(text, files_list, seen):
     m = re.search(r"download\('([^']+)',\s*'([^']+)'\)", text)
-    if m:
-        file_id = m.group(1)
-        file_name = m.group(2)
-        # 실제 파일 URL 구성
-        file_url = FILE_BASE_URL + file_id
+    if not m:
+        return
+    file_id = m.group(1)
+    file_name = m.group(2)
+    if file_id in seen:
+        return
+    seen.add(file_id)
+    name_lower = file_name.lower()
+    if name_lower.endswith(".pdf"):
+        ext = "pdf"
+    elif name_lower.endswith(".hwp") or name_lower.endswith(".hwpx"):
+        ext = "hwp"
+    elif name_lower.endswith(".docx") or name_lower.endswith(".doc"):
+        ext = "docx"
+    else:
         ext = ""
-        name_lower = file_name.lower()
-        if name_lower.endswith(".pdf"):
-            ext = "pdf"
-        elif name_lower.endswith(".hwp") or name_lower.endswith(".hwpx"):
-            ext = "hwp"
-        elif name_lower.endswith(".docx") or name_lower.endswith(".doc"):
-            ext = "docx"
-        files_list.append({
-            "name": file_name,
-            "url": file_url,
-            "ext": ext,
-        })
+    files_list.append({
+        "name": file_name,
+        "file_id": file_id,
+        "ext": ext,
+        "local_path": "",  # 다운로드 후 채워짐
+    })
+
+
+def download_files(items):
+    """파일 다운로드 및 저장"""
+    os.makedirs(FILES_DIR, exist_ok=True)
+
+    for item in items:
+        for f in item.get("files", []):
+            file_id = f.get("file_id", "")
+            if not file_id:
+                continue
+            local_path = os.path.join(FILES_DIR, file_id)
+            if os.path.exists(local_path):
+                # 이미 있으면 스킵
+                f["local_path"] = f"files/{file_id}"
+                continue
+            print(f"    파일 다운로드: {f['name']}")
+            content = fetch_file(file_id)
+            if content:
+                with open(local_path, "wb") as fp:
+                    fp.write(content)
+                f["local_path"] = f"files/{file_id}"
+                print(f"    저장 완료: {file_id} ({len(content)//1024}KB)")
+            else:
+                print(f"    다운로드 실패: {file_id}")
+            time.sleep(0.5)
+
+
+def cleanup_old_files(current_items):
+    """현재 공고에 없는 파일 삭제"""
+    if not os.path.exists(FILES_DIR):
+        return
+
+    # 현재 공고에서 사용 중인 file_id 목록
+    active_ids = set()
+    for item in current_items:
+        for f in item.get("files", []):
+            if f.get("file_id"):
+                active_ids.add(f["file_id"])
+
+    # 저장된 파일 중 active_ids에 없는 것 삭제
+    deleted = 0
+    for fname in os.listdir(FILES_DIR):
+        if fname not in active_ids:
+            os.remove(os.path.join(FILES_DIR, fname))
+            deleted += 1
+            print(f"    삭제: {fname}")
+
+    if deleted:
+        print(f"  총 {deleted}개 파일 삭제됨")
 
 
 def categorize(title, agency):
@@ -216,11 +254,10 @@ def categorize(title, agency):
 def scrape_all():
     print("=" * 50)
     print("대법원 자산매각 공고 스크래핑 시작")
-    print(f"프록시: {PROXY_URL}")
     print("=" * 50)
 
     print("\n[1단계] 전체 페이지 수 확인...")
-    soup1 = fetch(LIST_URL, params={"pageIndex": 1})
+    soup1 = fetch_html(LIST_URL, {"pageIndex": 1})
     if not soup1:
         print("첫 페이지 로드 실패!")
         return
@@ -230,28 +267,21 @@ def scrape_all():
     print("\n[2단계] 목록 수집 중...")
     all_items = []
     seen_seq = set()
-
     for page in range(1, total_pages + 1):
         print(f"  목록 {page}/{total_pages} 페이지...")
-        if page == 1:
-            soup = soup1
-        else:
-            soup = fetch(LIST_URL, params={"pageIndex": page})
+        soup = soup1 if page == 1 else fetch_html(LIST_URL, {"pageIndex": page})
+        if page > 1:
             time.sleep(1)
-
-        items = parse_list_page(soup)
-        for item in items:
+        for item in parse_list_page(soup):
             if item["seq_id"] not in seen_seq:
                 seen_seq.add(item["seq_id"])
                 all_items.append(item)
-
     print(f"  총 {len(all_items)}건 수집 완료")
 
     print("\n[3단계] 상세 정보 수집 중...")
     for i, item in enumerate(all_items):
         print(f"  상세 {i+1}/{len(all_items)} (no={item['no']})...")
         detail = parse_detail_page(item["seq_id"])
-        # 상세 페이지 날짜가 있으면 덮어쓰기
         if detail.get("date"):
             item["date"] = detail["date"]
         item["end_date"] = detail.get("end_date", "")
@@ -261,6 +291,12 @@ def scrape_all():
         item["detail_url"] = f"{VIEW_URL}?pageIndex=1&seq_id={item['seq_id']}&bub_cd=&searchWord=&searchOption="
         time.sleep(0.8)
 
+    print("\n[4단계] 첨부파일 다운로드 중...")
+    download_files(all_items)
+
+    print("\n[5단계] 오래된 파일 정리 중...")
+    cleanup_old_files(all_items)
+
     now_kst = datetime.now(KST)
     output = {
         "updated_at": now_kst.strftime("%Y-%m-%d %H:%M:%S"),
@@ -269,7 +305,7 @@ def scrape_all():
         "notices": all_items,
     }
 
-    out_path = os.path.join(os.path.dirname(__file__), "..", "data", "notices.json")
+    out_path = os.path.join(REPO_DIR, "data", "notices.json")
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(output, f, ensure_ascii=False, indent=2)
