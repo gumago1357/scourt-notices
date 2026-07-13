@@ -22,8 +22,8 @@ DATA_DIR.mkdir(exist_ok=True)
 FILES_DIR.mkdir(parents=True, exist_ok=True)
 
 BASE_URL      = "https://www.scourt.go.kr"
-LIST_URL      = f"{BASE_URL}/portal/dcboard/DcboardListAction.work?gubun=DG18"
-DETAIL_PREFIX = f"{BASE_URL}/portal/dcboard/DcboardViewAction.work"
+LIST_URL      = f"{BASE_URL}/portal/notice/realestate/RealNoticeList.work"
+DETAIL_PREFIX = f"{BASE_URL}/portal/notice/realestate/RealNoticeView.work"
 
 MIN_VALID_BYTES = 5_000
 HTML_SIGNATURES = (b"<!DOCTYPE", b"<html", b"<HTML", b"<!doctype")
