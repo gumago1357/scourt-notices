@@ -430,7 +430,7 @@ async def main():
         page = await context.new_page()
 
         print(f"\n[3단계] 공고 목록 수집")
-        await page.goto(LIST_URL, wait_until="networkidle", timeout=30000)
+        await page.goto(LIST_URL, wait_until="domcontentloaded", timeout=60000)
         total_pages = await get_total_pages(page)
         print(f"  → 총 {total_pages}페이지")
 
