@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """
-대법원 파산·회생 자산매각 공고 스크래퍼 v2 (Playwright)
-- 실제 URL 구조 반영: RealNoticeList.work / RealNoticeView.work
-- 파일 다운로드: RealNoticeFileDown.work?seq_id=...&file_id=...
+대법원 파산·회생 자산매각 공고 스크래퍼 v3 (Playwright)
+- 딜레이 넉넉하게 설정해서 연결 끊김 방지
 """
 
 import asyncio
@@ -14,6 +13,7 @@ from pathlib import Path
 
 from playwright.async_api import async_playwright, Page, TimeoutError as PWTimeout
 
+# ── 경로 설정 ─────────────────────────────────────────────────────────────────
 BASE_DIR     = Path(__file__).parent.parent
 DATA_DIR     = BASE_DIR / "data"
 FILES_DIR    = BASE_DIR / "docs" / "files"
@@ -22,11 +22,19 @@ NOTICES_JSON = DATA_DIR / "notices.json"
 DATA_DIR.mkdir(exist_ok=True)
 FILES_DIR.mkdir(parents=True, exist_ok=True)
 
+# ── URL 상수 ──────────────────────────────────────────────────────────────────
 BASE_URL     = "https://www.scourt.go.kr"
 LIST_URL     = BASE_URL + "/portal/notice/realestate/RealNoticeList.work"
 VIEW_URL     = BASE_URL + "/portal/notice/realestate/RealNoticeView.work"
 DOWNLOAD_URL = BASE_URL + "/portal/notice/realestate/RealNoticeFileDown.work"
 
+# ── 딜레이 설정 (서버 부하 방지 / 연결 끊김 방지) ────────────────────────────
+DELAY_BETWEEN_PAGES   = 5.0   # 목록 페이지 이동 사이
+DELAY_AFTER_DETAIL    = 6.0   # 상세 페이지 수집 후
+DELAY_AFTER_FILE      = 7.0   # 파일 다운로드 후
+DELAY_PAGE_LOAD       = 3000  # 페이지 로드 후 추가 대기 (밀리초)
+
+# ── 파일 유효성 검사 ──────────────────────────────────────────────────────────
 MIN_VALID_BYTES = 5_000
 HTML_SIGNATURES = (b"<!DOCTYPE", b"<html", b"<HTML", b"<!doctype")
 
@@ -54,6 +62,7 @@ def purge_broken_files() -> int:
             removed += 1
     return removed
 
+# ── 브라우저 설정 ─────────────────────────────────────────────────────────────
 BROWSER_ARGS = [
     "--no-sandbox",
     "--disable-setuid-sandbox",
@@ -68,6 +77,7 @@ USER_AGENT = (
     "Chrome/125.0.0.0 Safari/537.36"
 )
 
+# ── 목록 페이지 파싱 ──────────────────────────────────────────────────────────
 async def get_total_pages(page: Page) -> int:
     try:
         content = await page.content()
@@ -82,7 +92,7 @@ async def scrape_list_page(page: Page, page_idx: int) -> list[dict]:
     if page_idx > 1:
         url = f"{LIST_URL}?pageIndex={page_idx}"
         await page.goto(url, wait_until="domcontentloaded", timeout=60000)
-        await page.wait_for_timeout(1000)
+        await page.wait_for_timeout(DELAY_PAGE_LOAD)
 
     content = await page.content()
     notices = []
@@ -123,42 +133,54 @@ async def scrape_list_page(page: Page, page_idx: int) -> list[dict]:
                 break
 
         notices.append({
-            "id":    seq_id,
+            "id":     seq_id,
             "seq_id": seq_id,
-            "court": texts[1] if len(texts) > 1 else "",
-            "org":   texts[2] if len(texts) > 2 else "",
-            "title": title,
-            "date":  date,
-            "files": [],
+            "court":  texts[1] if len(texts) > 1 else "",
+            "org":    texts[2] if len(texts) > 2 else "",
+            "title":  title,
+            "date":   date,
+            "files":  [],
         })
 
     return notices
 
+# ── 상세 페이지 파싱 ──────────────────────────────────────────────────────────
 async def scrape_detail(page: Page, seq_id: str) -> dict:
-    detail_url = f"{VIEW_URL}?pageIndex=1&seq_id={seq_id}&bub_cd=&searchWord=&searchOption="
+    detail_url = (
+        f"{VIEW_URL}?pageIndex=1&seq_id={seq_id}"
+        f"&bub_cd=&searchWord=&searchOption="
+    )
 
-    for attempt in range(2):
+    for attempt in range(3):
         try:
-            await page.goto(
-                detail_url,
-                wait_until="domcontentloaded" if attempt else "networkidle",
-                timeout=60000,
-            )
+            await page.goto(detail_url, wait_until="domcontentloaded", timeout=60000)
+            await page.wait_for_timeout(DELAY_PAGE_LOAD)
             break
         except PWTimeout:
-            if attempt == 1:
+            if attempt == 2:
+                print(f"    [타임아웃] 상세 페이지 로드 실패: {seq_id}")
                 return {"files": [], "end_date": "", "phone": "", "detail_url": detail_url}
+            print(f"    [재시도] {attempt+1}번째 실패, 10초 후 재시도...")
+            await asyncio.sleep(10)
 
     content = await page.content()
     result  = {"files": [], "end_date": "", "phone": "", "detail_url": detail_url}
 
+    # 공고만료일, 전화번호 파싱
     for label, key in [("공고만료일", "end_date"), ("전화번호", "phone")]:
-        m = re.search(label + r'</th>\s*<td[^>]*>(.*?)</td>', content, re.DOTALL | re.IGNORECASE)
+        m = re.search(
+            label + r'</th>\s*<td[^>]*>(.*?)</td>',
+            content, re.DOTALL | re.IGNORECASE
+        )
         if m:
             result[key] = re.sub(r'<[^>]+>', '', m.group(1)).strip()
 
-    dl_pattern = re.compile(r"download\s*\(\s*'([^']+)'\s*,\s*'([^']+)'\s*\)", re.IGNORECASE)
-    seen_ids   = set()
+    # 첨부파일 파싱: javascript:download('파일ID','파일명')
+    dl_pattern = re.compile(
+        r"download\s*\(\s*'([^']+)'\s*,\s*'([^']+)'\s*\)",
+        re.IGNORECASE
+    )
+    seen_ids = set()
     for m in dl_pattern.finditer(content):
         file_id   = m.group(1).strip()
         file_name = m.group(2).strip()
@@ -184,10 +206,12 @@ async def scrape_detail(page: Page, seq_id: str) -> dict:
         })
 
     if result["files"]:
-        print(f"    → 첨부파일 {len(result['files'])}개: {[f['name'] for f in result['files']]}")
+        names = [f['name'] for f in result['files']]
+        print(f"    → 첨부파일 {len(result['files'])}개: {names}")
 
     return result
 
+# ── 파일 다운로드 ─────────────────────────────────────────────────────────────
 async def download_file(page: Page, seq_id: str, file_info: dict) -> str:
     file_id   = file_info.get("id", "")
     file_name = file_info.get("name", "unknown")
@@ -205,27 +229,36 @@ async def download_file(page: Page, seq_id: str, file_info: dict) -> str:
         print(f"    [스킵] {local_name} ({size_kb} KB)")
         return local_name
 
-    detail_url = f"{VIEW_URL}?pageIndex=1&seq_id={seq_id}&bub_cd=&searchWord=&searchOption="
+    detail_url = (
+        f"{VIEW_URL}?pageIndex=1&seq_id={seq_id}"
+        f"&bub_cd=&searchWord=&searchOption="
+    )
 
     # 방법 1: javascript:download() 트리거
     try:
         await page.goto(detail_url, wait_until="domcontentloaded", timeout=60000)
+        await page.wait_for_timeout(2000)
+
         fn_exists = await page.evaluate("typeof download === 'function'")
         if fn_exists:
             async with page.expect_download(timeout=90_000) as dl_info:
                 await page.evaluate(f"download('{file_id}', '{file_name}')")
+
             dl         = await dl_info.value
             suggested  = dl.suggested_filename or file_name
             safe_sug   = re.sub(r'[\\/*?:"<>|\s]', "_", suggested)
             local_name = f"{seq_id}_{file_id}_{safe_sug}"
             local_path = FILES_DIR / local_name
             tmp        = Path(await dl.path())
+
             if tmp and tmp.exists():
                 shutil.move(str(tmp), str(local_path))
                 if not is_broken_file(local_path):
-                    print(f"    [완료] {local_name} ({local_path.stat().st_size//1024} KB)")
+                    size_kb = local_path.stat().st_size // 1024
+                    print(f"    [완료] {local_name} ({size_kb} KB)")
                     return local_name
                 local_path.unlink(missing_ok=True)
+
     except PWTimeout:
         print(f"    [타임아웃] download() 방식: {file_name}")
     except Exception as e:
@@ -235,18 +268,22 @@ async def download_file(page: Page, seq_id: str, file_info: dict) -> str:
     try:
         async with page.expect_download(timeout=60_000) as dl_info:
             await page.goto(file_url, wait_until="domcontentloaded", timeout=60000)
+
         dl         = await dl_info.value
         suggested  = dl.suggested_filename or file_name
         safe_sug   = re.sub(r'[\\/*?:"<>|\s]', "_", suggested)
         local_name = f"{seq_id}_{file_id}_{safe_sug}"
         local_path = FILES_DIR / local_name
         tmp        = Path(await dl.path())
+
         if tmp and tmp.exists():
             shutil.move(str(tmp), str(local_path))
             if not is_broken_file(local_path):
-                print(f"    [완료/직접] {local_name} ({local_path.stat().st_size//1024} KB)")
+                size_kb = local_path.stat().st_size // 1024
+                print(f"    [완료/직접] {local_name} ({size_kb} KB)")
                 return local_name
             local_path.unlink(missing_ok=True)
+
     except PWTimeout:
         print(f"    [타임아웃] 직접 URL: {file_name}")
     except Exception as e:
@@ -255,6 +292,7 @@ async def download_file(page: Page, seq_id: str, file_info: dict) -> str:
     print(f"    [실패] {file_name}")
     return ""
 
+# ── 데이터 저장/로드 ──────────────────────────────────────────────────────────
 def load_existing() -> dict[str, dict]:
     if not NOTICES_JSON.exists():
         return {}
@@ -277,9 +315,10 @@ def save_notices(notices: list[dict]):
         json.dump(output, f, ensure_ascii=False, indent=2)
     print(f"[저장] notices.json → {len(notices)}건")
 
+# ── 메인 ─────────────────────────────────────────────────────────────────────
 async def main():
     print("=" * 60)
-    print("대법원 파산·회생 자산매각 공고 스크래퍼 v2")
+    print("대법원 파산·회생 자산매각 공고 스크래퍼 v3")
     print(f"실행 시각: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("=" * 60)
 
@@ -308,9 +347,10 @@ async def main():
         )
         page = await context.new_page()
 
+        # 3단계: 목록 수집
         print(f"\n[3단계] 목록 수집")
         await page.goto(LIST_URL, wait_until="domcontentloaded", timeout=60000)
-        await page.wait_for_timeout(2000)
+        await page.wait_for_timeout(DELAY_PAGE_LOAD)
 
         total_pages = await get_total_pages(page)
         print(f"  → 총 {total_pages}페이지")
@@ -321,11 +361,12 @@ async def main():
             rows = await scrape_list_page(page, pg)
             all_raw.extend(rows)
             if pg < total_pages:
-                await asyncio.sleep(1.0)
+                await asyncio.sleep(DELAY_BETWEEN_PAGES)
 
         print(f"\n  → 총 {len(all_raw)}건")
 
-        print(f"\n[4단계] 상세 + 파일 다운로드")
+        # 4단계: 상세 + 파일
+        print(f"\n[4단계] 상세 정보 + 파일 다운로드")
         final: list[dict] = []
         new_count  = 0
         file_count = 0
@@ -336,18 +377,21 @@ async def main():
 
             if nid in existing:
                 notice  = existing[nid]
-                missing = [fi for fi in notice.get("files", [])
-                           if fi.get("id") and not fi.get("local")]
+                missing = [
+                    fi for fi in notice.get("files", [])
+                    if fi.get("id") and not fi.get("local")
+                ]
                 if not missing:
-                    print("    → 스킵")
+                    print("    → 스킵 (기존 데이터)")
                     final.append(notice)
                     continue
+                print(f"    → 파일 {len(missing)}개 재시도")
             else:
                 detail = await scrape_detail(page, nid)
                 raw.update(detail)
                 notice = raw
                 new_count += 1
-                await asyncio.sleep(1.0)
+                await asyncio.sleep(DELAY_AFTER_DETAIL)
 
             for fi in notice.get("files", []):
                 if not fi.get("id") or fi.get("local"):
@@ -356,13 +400,18 @@ async def main():
                 if local:
                     fi["local"] = local
                     file_count += 1
-                await asyncio.sleep(1.5)
+                await asyncio.sleep(DELAY_AFTER_FILE)
 
             final.append(notice)
 
+            # 50건마다 중간 저장 (오류로 중단돼도 데이터 보존)
+            if idx % 50 == 0:
+                save_notices(final)
+                print(f"  [중간저장] {idx}건 처리 완료")
+
         await browser.close()
 
-    print(f"\n[5단계] 저장")
+    print(f"\n[5단계] 최종 저장")
     save_notices(final)
 
     print("\n" + "=" * 60)
