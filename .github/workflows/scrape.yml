@@ -2,13 +2,13 @@ name: 대법원 공고 스크래핑
 
 on:
   schedule:
-    - cron: '0 11 * * *'
+    - cron: '0 11 * * *'   # 매일 저녁 8시 KST
   workflow_dispatch:
 
 jobs:
   scrape:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 240     # 4시간으로 늘림
 
     permissions:
       contents: write
