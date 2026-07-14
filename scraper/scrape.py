@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 """
-대법원 파산·회생 자산매각 공고 스크래퍼 v7
-- docs/files/ 에 이미 있는 파일 자동으로 local 값 복원
-- 텍스트(제목/법원/기관) 항상 새로 수집 → 한글 정상화
-- 파일은 local 없는 것만 다운로드 → 타임아웃 방지
+대법원 파산·회생 자산매각 공고 스크래퍼 v8
+- v7 대비 변경: 상세 페이지에서 작성일(date) 필드 추가 수집
 """
 
 import asyncio
@@ -111,19 +109,12 @@ def local_file_ok(local_val: str) -> bool:
 
 # ── docs/files/ 에서 파일ID로 기존 파일 찾기 ─────────────────────────────────
 def build_existing_files_index() -> dict[str, str]:
-    """
-    docs/files/ 폴더에 있는 파일들을 스캔해서
-    { 파일ID: 파일명 } 딕셔너리 반환
-    파일명 형식: {seq_id}_{file_id}.{ext} 또는 {file_id}.{ext}
-    """
     index = {}
     if not FILES_DIR.exists():
         return index
     for f in FILES_DIR.iterdir():
         if f.is_file() and not is_broken_file(f):
-            # 파일ID 추출: 파일명에서 숫자로 된 긴 ID 찾기
-            stem = f.stem  # 확장자 제외
-            # 형식: seq_id_file_id 또는 file_id
+            stem  = f.stem
             parts = stem.split("_")
             for part in parts:
                 if len(part) >= 10 and part.isdigit():
@@ -162,18 +153,13 @@ def parse_list_page(soup: BeautifulSoup) -> list[dict]:
             continue
         tds   = tr.find_all("td")
         texts = [td.get_text(strip=True) for td in tds]
-        date  = ""
-        for t in texts:
-            if re.match(r"\d{4}\.\d{2}\.\d{2}", t):
-                date = t
-                break
         notices.append({
             "id":     seq_id,
             "seq_id": seq_id,
             "court":  texts[1] if len(texts) > 1 else "",
             "org":    texts[2] if len(texts) > 2 else "",
             "title":  title,
-            "date":   date,
+            "date":   "",   # ← 상세 페이지에서 수집
             "files":  [],
         })
     return notices
@@ -197,32 +183,49 @@ def scrape_all_list() -> list[dict]:
     return all_notices
 
 # ── 상세 수집 ─────────────────────────────────────────────────────────────────
+# ★ v8 핵심 변경: 작성일(date) 필드 추가 수집
+DATE_LABELS = ("작성일", "등록일", "게시일", "작 성 일")
+
 def scrape_detail(seq_id: str, files_index: dict) -> dict:
-    """
-    상세 페이지 수집.
-    files_index: { 파일ID: 파일명 } — 이미 받은 파일 복원용
-    """
     params = {
         "pageIndex": "1", "seq_id": seq_id,
         "bub_cd": "", "searchWord": "", "searchOption": "",
     }
     detail_url = VIEW_URL + "?" + "&".join(f"{k}={v}" for k, v in params.items())
-    result = {"files": [], "end_date": "", "phone": "", "detail_url": detail_url}
+    result = {
+        "files":      [],
+        "date":       "",   # ★ 추가
+        "end_date":   "",
+        "phone":      "",
+        "detail_url": detail_url,
+    }
 
     soup = get_page(VIEW_URL, params=params)
     if not soup:
         return result
 
+    # ★ th → td 파싱: 작성일 / 공고만료일 / 전화번호
     for th in soup.find_all("th"):
         label = th.get_text(strip=True)
         td    = th.find_next_sibling("td")
         if not td:
             continue
-        if label == "공고만료일":
-            result["end_date"] = td.get_text(strip=True)
-        elif label == "전화번호":
-            result["phone"] = td.get_text(strip=True)
+        val = td.get_text(strip=True)
 
+        if label in DATE_LABELS:
+            # "2026.07.14" 형식만 저장
+            m = re.search(r"\d{4}\.\d{2}\.\d{2}", val)
+            if m:
+                result["date"] = m.group(0)
+            else:
+                result["date"] = val
+        elif label == "공고만료일":
+            m = re.search(r"\d{4}\.\d{2}\.\d{2}", val)
+            result["end_date"] = m.group(0) if m else val
+        elif label == "전화번호":
+            result["phone"] = val
+
+    # 파일 파싱
     dl_pattern = re.compile(
         r"download\s*\(\s*'([^']+)'\s*,\s*'([^']+)'\s*\)", re.IGNORECASE
     )
@@ -242,9 +245,7 @@ def scrape_detail(seq_id: str, files_index: dict) -> dict:
             ext = "docx"
 
         local_name = f"{file_id}.{ext}"
-
-        # 이미 받은 파일인지 확인 (files_index에서 찾기)
-        local_val = ""
+        local_val  = ""
         if file_id in files_index:
             existing = files_index[file_id]
             if local_file_ok(FILES_DIR / existing):
@@ -263,7 +264,8 @@ def scrape_detail(seq_id: str, files_index: dict) -> dict:
     if result["files"]:
         ok    = sum(1 for f in result["files"] if f["local"])
         total = len(result["files"])
-        print(f"    → 첨부파일 {total}개 (복원 {ok}개)")
+        date_str = result["date"] or "—"
+        print(f"    → 첨부파일 {total}개 (복원 {ok}개) | 작성일: {date_str}")
 
     return result
 
@@ -334,7 +336,6 @@ async def try_download_once(page: Page, seq_id: str, file_info: dict) -> str:
     return ""
 
 async def download_file_with_retry(page: Page, seq_id: str, file_info: dict) -> str:
-    # 1차 3번
     for i in range(1, 4):
         print(f"    시도 {i}/3 (1차)")
         result = await try_download_once(page, seq_id, file_info)
@@ -343,7 +344,6 @@ async def download_file_with_retry(page: Page, seq_id: str, file_info: dict) -> 
         if i < 3:
             await asyncio.sleep(DELAY_FILE)
 
-    # 30초 대기 후 2차 3번
     print(f"    → 1차 실패. {int(DELAY_RETRY_PAUSE)}초 대기 후 2차...")
     await asyncio.sleep(DELAY_RETRY_PAUSE)
 
@@ -384,39 +384,31 @@ def save_notices(notices: list[dict]):
 # ── 메인 ─────────────────────────────────────────────────────────────────────
 async def main():
     print("=" * 60)
-    print("대법원 파산·회생 자산매각 공고 스크래퍼 v7")
+    print("대법원 파산·회생 자산매각 공고 스크래퍼 v8")
     print(f"실행 시각: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("=" * 60)
 
-    # 1단계: 깨진 파일 정리
     print("\n[1단계] 깨진 파일 정리")
     removed = purge_broken_files()
     print(f"  → {removed}개 삭제")
 
-    # 2단계: docs/files/ 스캔해서 기존 파일 인덱스 구축
     print("\n[2단계] 기존 파일 인덱스 구축")
     files_index = build_existing_files_index()
     print(f"  → {len(files_index)}개 파일 발견")
 
-    # 3단계: 기존 notices.json 로드
     existing = load_existing()
     print(f"\n[3단계] 기존 공고 데이터: {len(existing)}건")
 
-    # 4단계: 목록 수집
     print(f"\n[4단계] 목록 수집 (Cloudflare 프록시)")
     all_raw = scrape_all_list()
 
-    # 5단계: 상세 수집 (전부 새로 수집 → 한글 정상화)
-    # 단, 파일 local 값은 files_index로 복원
-    print(f"\n[5단계] 상세 정보 수집 (한글 재수집)")
+    print(f"\n[5단계] 상세 정보 수집 (작성일 포함 v8)")
     final: list[dict] = []
     rescrape_count = 0
 
     for idx, raw in enumerate(all_raw, 1):
         nid = raw["id"]
         print(f"  [{idx:3d}/{len(all_raw)}] {raw['title'][:50]}")
-
-        # 상세 페이지 항상 새로 수집 (한글 정상화)
         detail = scrape_detail(nid, files_index)
         raw.update(detail)
         final.append(raw)
@@ -430,7 +422,6 @@ async def main():
     save_notices(final)
     print(f"  → 재수집 완료: {rescrape_count}건")
 
-    # 6단계: 파일 다운로드 (local 없는 것만)
     need_download = [
         n for n in final
         if any(
@@ -488,6 +479,10 @@ async def main():
 
         save_notices(final)
 
+    # 작성일 수집 통계
+    date_ok   = sum(1 for n in final if n.get("date"))
+    date_fail = sum(1 for n in final if not n.get("date"))
+
     failed_total = sum(
         1 for n in final
         for fi in n.get("files", [])
@@ -496,12 +491,14 @@ async def main():
 
     print("\n" + "=" * 60)
     print(f"완료!")
-    print(f"  재수집 공고:      {rescrape_count}건")
-    print(f"  파일 복원:        {len(files_index)}개")
-    print(f"  파일 신규 성공:   {file_ok}개")
-    print(f"  파일 실패(FAILED): {file_fail}개")
-    print(f"  전체 FAILED 누적: {failed_total}개")
-    print(f"  전체 공고:        {len(final)}건")
+    print(f"  재수집 공고:        {rescrape_count}건")
+    print(f"  작성일 수집 성공:   {date_ok}건")   # ★ 추가
+    print(f"  작성일 수집 실패:   {date_fail}건")  # ★ 추가
+    print(f"  파일 복원:          {len(files_index)}개")
+    print(f"  파일 신규 성공:     {file_ok}개")
+    print(f"  파일 실패(FAILED):  {file_fail}개")
+    print(f"  전체 FAILED 누적:   {failed_total}개")
+    print(f"  전체 공고:          {len(final)}건")
     print("=" * 60)
 
 if __name__ == "__main__":
