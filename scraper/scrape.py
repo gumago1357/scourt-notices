@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
 대법원 파산·회생 자산매각 공고 스크래퍼 v8
-- v7 대비 변경: 상세 페이지에서 작성일(date) 필드 추가 수집
+- v7 대비: 작성일(date) 수집 추가
+- v8 대비: monthly_stats.json 누적 저장 추가
 """
 
 import asyncio
@@ -17,34 +18,35 @@ import requests
 from bs4 import BeautifulSoup
 from playwright.async_api import async_playwright, Page, TimeoutError as PWTimeout
 
-# ── 경로 설정 ─────────────────────────────────────────────────────────────────
-BASE_DIR     = Path(__file__).parent.parent
-DATA_DIR     = BASE_DIR / "data"
-FILES_DIR    = BASE_DIR / "docs" / "files"
-NOTICES_JSON = DATA_DIR / "notices.json"
+# ── 경로 설정
+BASE_DIR      = Path(__file__).parent.parent
+DATA_DIR      = BASE_DIR / "data"
+FILES_DIR     = BASE_DIR / "docs" / "files"
+NOTICES_JSON  = DATA_DIR / "notices.json"
+MONTHLY_JSON  = DATA_DIR / "monthly_stats.json"   # ★ 추가
 
 DATA_DIR.mkdir(exist_ok=True)
 FILES_DIR.mkdir(parents=True, exist_ok=True)
 
-# ── URL 상수 ──────────────────────────────────────────────────────────────────
+# ── URL 상수
 BASE_URL     = "https://www.scourt.go.kr"
 LIST_URL     = BASE_URL + "/portal/notice/realestate/RealNoticeList.work"
 VIEW_URL     = BASE_URL + "/portal/notice/realestate/RealNoticeView.work"
 DOWNLOAD_URL = BASE_URL + "/portal/notice/realestate/RealNoticeFileDown.work"
 
-# ── Cloudflare Worker 프록시 ──────────────────────────────────────────────────
+# ── Cloudflare Worker 프록시
 PROXY_BASE = "https://scourt-proxy.gumago1357.workers.dev"
 
 def proxy(url: str) -> str:
     return f"{PROXY_BASE}/?url={quote(url, safe='')}"
 
-# ── 딜레이 설정 ───────────────────────────────────────────────────────────────
+# ── 딜레이 설정
 DELAY_LIST        = 2.0
 DELAY_DETAIL      = 2.0
 DELAY_FILE        = 5.0
 DELAY_RETRY_PAUSE = 30.0
 
-# ── HTTP 세션 ─────────────────────────────────────────────────────────────────
+# ── HTTP 세션
 SESSION = requests.Session()
 SESSION.headers.update({
     "User-Agent": (
@@ -73,7 +75,7 @@ def get_page(url: str, params: dict = None, retries: int = 3) -> BeautifulSoup |
             time.sleep(wait)
     return None
 
-# ── 파일 유효성 검사 ──────────────────────────────────────────────────────────
+# ── 파일 유효성 검사
 MIN_VALID_BYTES = 5_000
 HTML_SIGNATURES = (b"<!DOCTYPE", b"<html", b"<HTML", b"<!doctype")
 
@@ -107,7 +109,6 @@ def local_file_ok(local_val: str) -> bool:
     path = FILES_DIR / local_val
     return path.exists() and not is_broken_file(path)
 
-# ── docs/files/ 에서 파일ID로 기존 파일 찾기 ─────────────────────────────────
 def build_existing_files_index() -> dict[str, str]:
     index = {}
     if not FILES_DIR.exists():
@@ -121,7 +122,7 @@ def build_existing_files_index() -> dict[str, str]:
                     index[part] = f.name
     return index
 
-# ── 목록 수집 ─────────────────────────────────────────────────────────────────
+# ── 목록 수집
 def get_total_pages(soup: BeautifulSoup) -> int:
     nums = []
     for a in soup.find_all("a", href=True):
@@ -159,7 +160,7 @@ def parse_list_page(soup: BeautifulSoup) -> list[dict]:
             "court":  texts[1] if len(texts) > 1 else "",
             "org":    texts[2] if len(texts) > 2 else "",
             "title":  title,
-            "date":   "",   # ← 상세 페이지에서 수집
+            "date":   "",
             "files":  [],
         })
     return notices
@@ -182,8 +183,7 @@ def scrape_all_list() -> list[dict]:
     print(f"\n  → 총 {len(all_notices)}건")
     return all_notices
 
-# ── 상세 수집 ─────────────────────────────────────────────────────────────────
-# ★ v8 핵심 변경: 작성일(date) 필드 추가 수집
+# ── 상세 수집 (작성일 포함)
 DATE_LABELS = ("작성일", "등록일", "게시일", "작 성 일")
 
 def scrape_detail(seq_id: str, files_index: dict) -> dict:
@@ -194,7 +194,7 @@ def scrape_detail(seq_id: str, files_index: dict) -> dict:
     detail_url = VIEW_URL + "?" + "&".join(f"{k}={v}" for k, v in params.items())
     result = {
         "files":      [],
-        "date":       "",   # ★ 추가
+        "date":       "",
         "end_date":   "",
         "phone":      "",
         "detail_url": detail_url,
@@ -204,7 +204,6 @@ def scrape_detail(seq_id: str, files_index: dict) -> dict:
     if not soup:
         return result
 
-    # ★ th → td 파싱: 작성일 / 공고만료일 / 전화번호
     for th in soup.find_all("th"):
         label = th.get_text(strip=True)
         td    = th.find_next_sibling("td")
@@ -213,19 +212,14 @@ def scrape_detail(seq_id: str, files_index: dict) -> dict:
         val = td.get_text(strip=True)
 
         if label in DATE_LABELS:
-            # "2026.07.14" 형식만 저장
             m = re.search(r"\d{4}\.\d{2}\.\d{2}", val)
-            if m:
-                result["date"] = m.group(0)
-            else:
-                result["date"] = val
+            result["date"] = m.group(0) if m else val
         elif label == "공고만료일":
             m = re.search(r"\d{4}\.\d{2}\.\d{2}", val)
             result["end_date"] = m.group(0) if m else val
         elif label == "전화번호":
             result["phone"] = val
 
-    # 파일 파싱
     dl_pattern = re.compile(
         r"download\s*\(\s*'([^']+)'\s*,\s*'([^']+)'\s*\)", re.IGNORECASE
     )
@@ -264,12 +258,60 @@ def scrape_detail(seq_id: str, files_index: dict) -> dict:
     if result["files"]:
         ok    = sum(1 for f in result["files"] if f["local"])
         total = len(result["files"])
-        date_str = result["date"] or "—"
-        print(f"    → 첨부파일 {total}개 (복원 {ok}개) | 작성일: {date_str}")
+        print(f"    → 파일 {total}개 (복원 {ok}개) | 작성일: {result['date'] or '—'}")
 
     return result
 
-# ── 파일 다운로드 (Playwright) ────────────────────────────────────────────────
+# ── ★ monthly_stats.json 저장 (누적, 덮어쓰기 방식)
+def save_monthly_stats(notices: list[dict]):
+    """
+    작성일 기준 월별 공고 수를 계산해서 monthly_stats.json에 저장.
+    - 기존 파일의 과거 달 데이터는 유지
+    - 현재 notices에 있는 달은 새로 계산한 값으로 덮어쓰기 (중복 방지)
+    """
+    # 기존 데이터 로드
+    existing_monthly = {}
+    if MONTHLY_JSON.exists():
+        try:
+            with open(MONTHLY_JSON, encoding="utf-8") as f:
+                data = json.load(f)
+            existing_monthly = data.get("monthly", {})
+        except Exception as e:
+            print(f"  [경고] monthly_stats.json 로드 실패: {e}")
+
+    # 현재 notices에서 월별 집계
+    current_monthly: dict[str, int] = {}
+    no_date_count = 0
+    for n in notices:
+        date_str = n.get("date", "")
+        if not date_str:
+            no_date_count += 1
+            continue
+        m = re.match(r"(\d{4})\.(\d{2})", date_str)
+        if not m:
+            no_date_count += 1
+            continue
+        key = f"{m.group(1)}-{m.group(2)}"
+        current_monthly[key] = current_monthly.get(key, 0) + 1
+
+    # 병합: 기존 과거 달 유지 + 현재 달 덮어쓰기
+    merged = dict(existing_monthly)
+    merged.update(current_monthly)  # 같은 달은 새 값으로 덮어쓰기
+
+    output = {
+        "updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "monthly": dict(sorted(merged.items())),  # 날짜순 정렬
+    }
+    with open(MONTHLY_JSON, "w", encoding="utf-8") as f:
+        json.dump(output, f, ensure_ascii=False, indent=2)
+
+    total_months = len(merged)
+    total_counted = sum(merged.values())
+    print(f"  [저장] monthly_stats.json → {total_months}개월, 총 {total_counted}건")
+    if no_date_count:
+        print(f"  [참고] 작성일 없어서 집계 제외: {no_date_count}건")
+
+# ── 파일 다운로드 (Playwright)
 BROWSER_ARGS = [
     "--no-sandbox", "--disable-setuid-sandbox",
     "--disable-dev-shm-usage", "--disable-gpu",
@@ -293,7 +335,6 @@ async def try_download_once(page: Page, seq_id: str, file_info: dict) -> str:
         f"&bub_cd=&searchWord=&searchOption="
     )
 
-    # 방법 1: javascript:download() 트리거
     try:
         await page.goto(detail_url, wait_until="domcontentloaded", timeout=60000)
         await page.wait_for_timeout(2000)
@@ -315,7 +356,6 @@ async def try_download_once(page: Page, seq_id: str, file_info: dict) -> str:
     except Exception as e:
         print(f"    [오류] download(): {e}")
 
-    # 방법 2: 직접 URL
     try:
         async with page.expect_download(timeout=60_000) as dl_info:
             await page.goto(file_url, wait_until="domcontentloaded", timeout=60000)
@@ -358,7 +398,7 @@ async def download_file_with_retry(page: Page, seq_id: str, file_info: dict) -> 
     print(f"    → 최종 실패 → FAILED")
     return "FAILED"
 
-# ── 데이터 저장/로드 ──────────────────────────────────────────────────────────
+# ── 데이터 저장/로드
 def load_existing() -> dict[str, dict]:
     if not NOTICES_JSON.exists():
         return {}
@@ -381,7 +421,7 @@ def save_notices(notices: list[dict]):
         json.dump(output, f, ensure_ascii=False, indent=2)
     print(f"  [저장] notices.json → {len(notices)}건")
 
-# ── 메인 ─────────────────────────────────────────────────────────────────────
+# ── 메인
 async def main():
     print("=" * 60)
     print("대법원 파산·회생 자산매각 공고 스크래퍼 v8")
@@ -402,7 +442,7 @@ async def main():
     print(f"\n[4단계] 목록 수집 (Cloudflare 프록시)")
     all_raw = scrape_all_list()
 
-    print(f"\n[5단계] 상세 정보 수집 (작성일 포함 v8)")
+    print(f"\n[5단계] 상세 정보 수집 (작성일 포함)")
     final: list[dict] = []
     rescrape_count = 0
 
@@ -420,7 +460,10 @@ async def main():
             print(f"  [중간저장] {idx}건")
 
     save_notices(final)
-    print(f"  → 재수집 완료: {rescrape_count}건")
+
+    # ★ monthly_stats.json 저장
+    print(f"\n[5.5단계] 월별 통계 저장")
+    save_monthly_stats(final)
 
     need_download = [
         n for n in final
@@ -479,10 +522,8 @@ async def main():
 
         save_notices(final)
 
-    # 작성일 수집 통계
     date_ok   = sum(1 for n in final if n.get("date"))
     date_fail = sum(1 for n in final if not n.get("date"))
-
     failed_total = sum(
         1 for n in final
         for fi in n.get("files", [])
@@ -492,8 +533,8 @@ async def main():
     print("\n" + "=" * 60)
     print(f"완료!")
     print(f"  재수집 공고:        {rescrape_count}건")
-    print(f"  작성일 수집 성공:   {date_ok}건")   # ★ 추가
-    print(f"  작성일 수집 실패:   {date_fail}건")  # ★ 추가
+    print(f"  작성일 수집 성공:   {date_ok}건")
+    print(f"  작성일 수집 실패:   {date_fail}건")
     print(f"  파일 복원:          {len(files_index)}개")
     print(f"  파일 신규 성공:     {file_ok}개")
     print(f"  파일 실패(FAILED):  {file_fail}개")
