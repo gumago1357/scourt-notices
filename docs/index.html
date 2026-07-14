@@ -49,9 +49,9 @@ main{flex:1;padding:18px 22px;min-width:0}
 .btn-reset:hover{background:#fff0f0;color:var(--red);border-color:#e74c3c}
 .result-count{font-size:13px;color:var(--text-muted)}
 .result-count b{color:var(--navy);font-weight:700}
-.table-wrap{overflow-x:auto;background:var(--white);border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow);max-height:calc(100vh - 320px);overflow-y:auto}
+.table-wrap{overflow-x:auto;background:var(--white);border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow)}
 table{width:100%;border-collapse:collapse;min-width:700px;table-layout:fixed}
-thead th{background:var(--navy);color:#fff;padding:11px 12px;text-align:left;font-size:13px;font-weight:700;white-space:nowrap;position:sticky;top:0;z-index:2}
+thead th{background:var(--navy);color:#fff;padding:11px 12px;text-align:left;font-size:13px;font-weight:700;white-space:nowrap}
 thead th:first-child{border-radius:var(--radius) 0 0 0}
 thead th:last-child{border-radius:0 var(--radius) 0 0}
 tbody tr{border-bottom:1px solid var(--border);transition:background .12s;cursor:pointer}
@@ -60,9 +60,9 @@ tbody tr:hover{background:var(--accent)}
 tbody tr.urgent-row{background:#fff5f5}
 tbody tr.urgent-row:hover{background:#ffe8e8}
 td{padding:11px 12px;vertical-align:middle;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-td.num{width:42px;text-align:center;color:var(--text-muted);font-size:12px}
+td.num{width:56px;text-align:center;color:var(--text-muted);font-size:12px}
 td.court{width:120px;color:var(--navy);font-weight:600;font-size:13px}
-td.org{width:320px;color:var(--text-muted);font-size:12px}
+td.org{width:430px;color:var(--text-muted);font-size:12px}
 td.title{color:var(--text);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 td.date-col{width:100px;font-size:12px;color:var(--text-muted)}
 td.end-col{width:150px;font-size:13px}
@@ -203,9 +203,9 @@ mark.hl{background:#fff3b0;color:inherit;border-radius:2px;padding:0 1px}
       <div class="table-wrap">
         <table>
           <thead><tr>
-            <th style="width:42px">#</th>
+            <th style="width:56px">순번</th>
             <th style="width:120px">관할법원</th>
-            <th style="width:320px">매각기관</th>
+            <th style="width:430px">매각기관</th>
             <th>공고 제목</th>
             <th style="width:100px">작성일</th>
             <th style="width:150px">공고만료일</th>
@@ -592,7 +592,7 @@ function goPage(p){
   currentPage=p;
   history.replaceState({page:p},'','');
   renderTable();renderPagination();
-  document.querySelector('.table-wrap').scrollTop=0;
+  window.scrollTo({top:0,behavior:'smooth'});
 }
 
 function openDetail(seqId){
