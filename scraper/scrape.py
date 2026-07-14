@@ -74,7 +74,7 @@ def get_page(url: str, params: dict = None, retries: int = 3) -> BeautifulSoup |
         try:
             resp = SESSION.get(proxied_url, timeout=30)
             resp.raise_for_status()
-            resp.encoding = "utf-8"
+            resp.encoding = resp.apparent_encoding
             return BeautifulSoup(resp.text, "html.parser")
         except Exception as e:
             wait = 5 * (attempt + 1)
