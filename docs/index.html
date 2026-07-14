@@ -3,444 +3,720 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>파산·회생 자산매각 공고 게시판</title>
+<title>대법원 파산·회생 자산매각 공고</title>
 <style>
+:root{--navy:#1a3a6c;--navy-dark:#122a52;--navy-light:#2a4f8a;--accent:#e8f0fc;--accent2:#c8d9f5;--text:#1e2633;--text-muted:#5a6478;--border:#d8e2ef;--bg:#f5f7fb;--white:#fff;--red:#c0392b;--yellow:#b07900;--green:#1b7a3e;--gray:#6c757d;--sidebar-w:230px;--radius:8px;--shadow:0 2px 8px rgba(26,58,108,0.10)}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'맑은 고딕','Malgun Gothic',sans-serif;font-size:13px;background:#f0f2f5;color:#222}
+body{font-family:'Malgun Gothic','맑은 고딕',-apple-system,BlinkMacSystemFont,sans-serif;font-size:15px;color:var(--text);background:var(--bg);min-height:100vh}
+header{background:var(--navy);color:#fff;padding:0 20px;height:56px;display:flex;align-items:center;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.18);gap:12px}
+header h1{font-size:16px;font-weight:700;white-space:nowrap}
+header .sub{font-size:12px;opacity:.6;white-space:nowrap}
+.header-right{margin-left:auto;font-size:12px;opacity:.7;white-space:nowrap}
+.layout{display:flex;min-height:calc(100vh - 56px)}
+aside{width:var(--sidebar-w);background:var(--white);border-right:1px solid var(--border);display:flex;flex-direction:column;position:sticky;top:56px;height:calc(100vh - 56px);flex-shrink:0}
+.sidebar-scroll{flex:1;overflow-y:auto;padding:16px 0}
+.sidebar-title{font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.8px;padding:0 16px 8px;border-bottom:1px solid var(--border);margin-bottom:4px}
+.cat-item{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;cursor:pointer;border:none;background:none;width:100%;text-align:left;font-size:13px;color:var(--text);transition:background .13s;font-family:inherit}
+.cat-item:hover{background:var(--accent)}
+.cat-item.active{background:var(--accent2);color:var(--navy);font-weight:700}
+.cat-badge{background:var(--border);color:var(--text-muted);font-size:11px;font-weight:700;border-radius:10px;padding:1px 7px;min-width:22px;text-align:center}
+.cat-item.active .cat-badge{background:var(--navy);color:#fff}
+.sidebar-bottom{border-top:1px solid var(--border);padding:10px 0}
+.sidebar-tab{display:flex;align-items:center;gap:8px;padding:10px 16px;cursor:pointer;border:none;background:none;width:100%;text-align:left;font-size:13px;color:var(--text-muted);font-family:inherit;transition:background .13s;font-weight:600}
+.sidebar-tab:hover{background:var(--accent);color:var(--navy)}
+.sidebar-tab.active{background:var(--accent2);color:var(--navy)}
+main{flex:1;padding:18px 22px;min-width:0}
+.view{display:none}.view.active{display:block}
+.dashboard{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.stat-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow)}
+.stat-card .s-label{font-size:11px;color:var(--text-muted);font-weight:700;margin-bottom:5px}
+.stat-card .s-val{font-size:26px;font-weight:800;color:var(--navy);line-height:1}
+.stat-card .s-sub{font-size:11px;color:var(--text-muted);margin-top:4px}
+.stat-card.urgent .s-val{color:var(--red)}.stat-card.ok .s-val{color:var(--green)}.stat-card.muted .s-val{color:var(--gray)}
+.filters{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:14px;box-shadow:var(--shadow)}
+.filter-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.filter-row+.filter-row{margin-top:10px}
+.filter-label{font-size:12px;font-weight:700;color:var(--text-muted);white-space:nowrap;min-width:60px}
+.filter-row input{border:1px solid var(--border);border-radius:5px;padding:6px 10px;font-size:13px;font-family:inherit;color:var(--text);background:var(--bg);height:34px}
+.filter-row input[type=text]{width:220px}
+.filter-row input[type=date]{width:145px}
+.filter-sep{color:var(--text-muted);font-size:12px}
+.toolbar{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.sort-btn{padding:6px 16px;border-radius:20px;border:1px solid var(--border);background:var(--white);font-size:13px;font-family:inherit;cursor:pointer;color:var(--text-muted);transition:all .13s;font-weight:500}
+.sort-btn.active{background:var(--navy);color:#fff;border-color:var(--navy);font-weight:700}
+.sort-btn:hover:not(.active){background:var(--accent);border-color:var(--navy-light);color:var(--navy)}
+.btn-reset{padding:6px 16px;border-radius:20px;border:1px solid var(--border);background:var(--white);font-size:13px;font-family:inherit;cursor:pointer;color:var(--text-muted);margin-left:auto}
+.btn-reset:hover{background:#fff0f0;color:var(--red);border-color:#e74c3c}
+.result-count{font-size:13px;color:var(--text-muted)}
+.result-count b{color:var(--navy);font-weight:700}
+.table-wrap{overflow-x:auto;background:var(--white);border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow);max-height:calc(100vh - 320px);overflow-y:auto}
+table{width:100%;border-collapse:collapse;min-width:700px;table-layout:fixed}
+thead th{background:var(--navy);color:#fff;padding:11px 12px;text-align:left;font-size:13px;font-weight:700;white-space:nowrap;position:sticky;top:0;z-index:2}
+thead th:first-child{border-radius:var(--radius) 0 0 0}
+thead th:last-child{border-radius:0 var(--radius) 0 0}
+tbody tr{border-bottom:1px solid var(--border);transition:background .12s;cursor:pointer}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--accent)}
+tbody tr.urgent-row{background:#fff5f5}
+tbody tr.urgent-row:hover{background:#ffe8e8}
+td{padding:11px 12px;vertical-align:middle;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+td.num{width:42px;text-align:center;color:var(--text-muted);font-size:12px}
+td.court{width:120px;color:var(--navy);font-weight:600;font-size:13px}
+td.org{width:320px;color:var(--text-muted);font-size:12px}
+td.title{color:var(--text);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+td.date-col{width:100px;font-size:12px;color:var(--text-muted)}
+td.end-col{width:150px;font-size:13px}
+mark.hl{background:#fff3b0;color:inherit;border-radius:2px;padding:0 1px}
+.dday{display:inline-block;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:700;margin-left:4px;vertical-align:middle}
+.dday.red{background:#fff0f1;color:#c0392b;border:1px solid #f5b7b1}
+.dday.yel{background:#fef9e7;color:#b07900;border:1px solid #f9e79f}
+.dday.grn{background:#eafaf1;color:#1b7a3e;border:1px solid #a9dfbf}
+.dday.gray{background:#f4f6f7;color:#6c757d;border:1px solid #d5d8dc}
+.new-badge{display:inline-block;background:#e74c3c;color:#fff;font-size:10px;font-weight:700;border-radius:4px;padding:1px 5px;margin-left:5px;vertical-align:middle}
+.fav-btn{background:none;border:none;cursor:pointer;font-size:15px;padding:1px 3px;line-height:1;vertical-align:middle;opacity:.35;transition:opacity .15s;margin-left:4px}
+.fav-btn:hover,.fav-btn.on{opacity:1}
+.memo-dot{display:inline-block;font-size:12px;vertical-align:middle;margin-left:3px}
+.pagination{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:18px;flex-wrap:wrap}
+.page-btn{border:1px solid var(--border);background:var(--white);color:var(--text-muted);border-radius:5px;padding:6px 12px;font-size:13px;cursor:pointer;font-family:inherit;min-width:36px;text-align:center;transition:all .12s}
+.page-btn:hover:not(:disabled){background:var(--accent);color:var(--navy)}
+.page-btn.active{background:var(--navy);color:#fff;border-color:var(--navy);font-weight:700}
+.page-btn:disabled{opacity:.35;cursor:not-allowed}
 
-.header{background:#1a3a6c;color:#fff;padding:14px 24px;display:flex;justify-content:space-between;align-items:center}
-.header-left h1{font-size:20px;font-weight:700;letter-spacing:-0.5px}
-.header-left p{font-size:11px;opacity:0.7;margin-top:3px}
-.header-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
-.btn-update{background:#fff;color:#1a3a6c;border:none;padding:6px 16px;border-radius:4px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px}
-.btn-update:hover{background:#e8f0ff}
-.header-info{font-size:11px;opacity:0.8;text-align:right}
-.header-info span{color:#ffd700;font-weight:600}
+/* 통계 뷰 */
+.stats-view h2{font-size:18px;font-weight:700;color:var(--navy);margin-bottom:20px}
+.stats-section{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;margin-bottom:18px;box-shadow:var(--shadow)}
+.stats-section-title{font-size:14px;font-weight:700;color:var(--navy);margin-bottom:16px}
+.chart-bars{display:flex;align-items:flex-end;gap:8px;height:160px}
+.chart-bar-wrap{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;min-width:32px}
+.chart-bar{background:var(--navy);border-radius:3px 3px 0 0;width:100%;min-height:2px;transition:opacity .15s}
+.chart-bar:hover{opacity:.75}
+.chart-label{font-size:10px;color:var(--text-muted);white-space:nowrap}
+.chart-val{font-size:10px;color:var(--navy);font-weight:700}
+.court-bars{display:flex;flex-direction:column;gap:8px}
+.court-bar-row{display:flex;align-items:center;gap:10px}
+.court-name{font-size:12px;color:var(--text);width:120px;flex-shrink:0;text-align:right}
+.court-bar-bg{flex:1;background:var(--bg);border-radius:4px;height:22px;overflow:hidden}
+.court-bar-fill{background:var(--navy-light);height:100%;border-radius:4px;display:flex;align-items:center;padding-left:8px;transition:width .4s}
+.court-bar-val{font-size:11px;color:#fff;font-weight:700;white-space:nowrap}
 
-.container{display:flex;min-height:calc(100vh - 72px)}
-
-.sidebar{width:180px;min-width:180px;background:#fff;border-right:1px solid #dde3ed;padding:16px 0}
-.sidebar-title{font-size:11px;font-weight:700;color:#888;padding:0 16px 10px;letter-spacing:1px}
-.cat-item{display:flex;justify-content:space-between;align-items:center;padding:8px 16px;cursor:pointer;color:#444;transition:all 0.1s}
-.cat-item:hover{background:#f5f7fa}
-.cat-item.active{background:#1a3a6c;color:#fff;font-weight:600}
-.cat-item.active .cat-count{background:rgba(255,255,255,0.2);color:#fff}
-.cat-count{font-size:11px;background:#eef1f7;color:#666;padding:2px 8px;border-radius:10px;min-width:30px;text-align:center}
-
-.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
-
-.search-bar{background:#fff;padding:12px 20px;border-bottom:1px solid #dde3ed;display:flex;gap:8px;align-items:center}
-.search-select{height:34px;padding:0 8px;border:1px solid #cdd3e0;border-radius:4px;font-size:13px;background:#fff;color:#333}
-.search-input{flex:1;height:34px;padding:0 12px;border:1px solid #cdd3e0;border-radius:4px;font-size:13px}
-.search-input:focus,.search-select:focus{outline:none;border-color:#1a3a6c}
-.btn-search{height:34px;padding:0 20px;background:#1a3a6c;color:#fff;border:none;border-radius:4px;font-size:13px;font-weight:600;cursor:pointer}
-.btn-search:hover{background:#152f5a}
-.btn-reset{height:34px;padding:0 16px;background:#f0f2f5;color:#555;border:1px solid #cdd3e0;border-radius:4px;font-size:13px;cursor:pointer}
-.btn-reset:hover{background:#e4e7ed}
-
-.table-area{flex:1;padding:0;overflow:auto}
-.table-meta{display:flex;justify-content:space-between;align-items:center;padding:10px 20px;font-size:12px;color:#666;background:#fff;border-bottom:1px solid #eee}
-.table-meta b{color:#1a3a6c;font-weight:700}
-
-table{width:100%;border-collapse:collapse;background:#fff}
-thead tr{background:#f5f7fa;border-bottom:2px solid #dde3ed}
-th{padding:10px 12px;text-align:center;font-weight:600;font-size:12px;color:#555;white-space:nowrap}
-th.left{text-align:left}
-td{padding:10px 12px;border-bottom:1px solid #eef0f5;vertical-align:middle;text-align:center}
-td.left{text-align:left}
-tr:hover td{background:#f9fbff}
-.td-no{color:#999;font-size:12px}
-.td-court{font-size:12px;color:#444}
-.td-agency{font-size:12px;color:#555;line-height:1.5;text-align:left}
-.td-title-wrap{text-align:left}
-.td-title-link{color:#1155cc;text-decoration:none;font-size:13px;font-weight:500;display:block;margin-bottom:3px}
-.td-title-link:hover{text-decoration:underline}
-.td-date{font-size:12px;color:#777;white-space:nowrap}
-.td-attach{text-align:center}
-.attach-icon{display:inline-flex;flex-direction:column;align-items:center;background:#eef3ff;border:1px solid #c0cce8;border-radius:3px;padding:2px 6px;font-size:10px;color:#1a3a6c;min-width:24px;cursor:pointer}
-.attach-icon:hover{background:#dbe5ff}
-
-.pagination{display:flex;justify-content:center;align-items:center;gap:4px;padding:16px;background:#fff;border-top:1px solid #eee}
-.page-btn{padding:5px 10px;border:1px solid #cdd3e0;border-radius:4px;background:#fff;color:#555;font-size:12px;cursor:pointer;min-width:32px}
-.page-btn:hover{background:#f0f4ff;border-color:#1a3a6c;color:#1a3a6c}
-.page-btn.active{background:#1a3a6c;color:#fff;border-color:#1a3a6c;font-weight:600}
-
-.loading-row td{text-align:center;padding:60px;color:#999}
-.spinner{display:inline-block;width:20px;height:20px;border:2px solid #ddd;border-top-color:#1a3a6c;border-radius:50%;animation:spin 0.8s linear infinite;vertical-align:middle;margin-right:8px}
+/* 모달 */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(20,35,65,.5);z-index:200;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto}
+.modal-overlay.open{display:flex}
+.modal{background:var(--white);border-radius:10px;box-shadow:0 8px 40px rgba(26,58,108,.22);width:100%;max-width:1400px;height:calc(100vh - 32px);display:flex;flex-direction:column;overflow:hidden}
+.modal-content{display:flex;flex:1;overflow:hidden}
+.modal-left{width:280px;flex-shrink:0;border-right:1px solid var(--border);overflow-y:auto;padding:18px 16px;display:flex;flex-direction:column;gap:0}
+.modal-right{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.modal-close-bar{display:flex;justify-content:flex-end;padding:8px 12px;border-bottom:1px solid var(--border);background:var(--bg);flex-shrink:0}
+.modal-close{background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-muted);font-size:13px;cursor:pointer;padding:4px 12px;font-family:inherit;transition:all .13s}
+.modal-close:hover{background:var(--red);color:#fff;border-color:var(--red)}
+.notice-title-box{margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.notice-title-box h2{font-size:14px;font-weight:700;color:var(--navy);line-height:1.5}
+.meta-grid{display:flex;flex-direction:column;gap:12px;margin-bottom:14px}
+.meta-row{display:flex;flex-direction:column;gap:3px}
+.meta-key{font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px}
+.meta-val{font-size:13px;color:var(--text);font-weight:500;line-height:1.4}
+.divider{border:none;border-top:1px solid var(--border);margin:12px 0}
+.file-list-title{font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.file-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--border);border-radius:6px;margin-bottom:6px;background:var(--bg)}
+.file-icon{font-size:15px;flex-shrink:0}
+.file-name{flex:1;font-size:11px;color:var(--text);word-break:break-all;line-height:1.4}
+.btn-dl{padding:4px 8px;border-radius:4px;border:1px solid var(--navy);background:var(--white);color:var(--navy);font-size:11px;font-weight:700;cursor:pointer;text-decoration:none;white-space:nowrap;font-family:inherit;transition:background .13s;display:inline-block}
+.btn-dl:hover{background:var(--navy);color:#fff}
+.hwp-note{font-size:10px;color:var(--gray);margin:-2px 0 4px 22px}
+.memo-section{margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
+.memo-label{font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.memo-textarea{width:100%;border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:12px;font-family:inherit;color:var(--text);background:var(--bg);resize:vertical;min-height:80px;line-height:1.5;transition:border-color .13s}
+.memo-textarea:focus{outline:none;border-color:var(--navy)}
+.memo-saved{font-size:10px;color:var(--green);margin-top:4px;display:none}
+.memo-saved.show{display:block}
+.pdf-tab-bar{display:flex;gap:3px;padding:8px 12px 0;flex-wrap:wrap;border-bottom:1px solid var(--border);background:var(--bg);flex-shrink:0}
+.pdf-tab{padding:5px 12px;border-radius:5px 5px 0 0;border:1px solid var(--border);border-bottom:none;background:var(--bg);font-size:12px;cursor:pointer;font-family:inherit;color:var(--text-muted);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:-1px}
+.pdf-tab.active{background:var(--white);color:var(--navy);font-weight:700;border-bottom-color:var(--white)}
+.pdf-no-file{display:flex;align-items:center;justify-content:center;flex:1;color:var(--text-muted);font-size:14px}
+.pdf-frame-wrap{flex:1;overflow:hidden}
+.pdf-frame-wrap iframe{width:100%;height:100%;display:block;border:none}
+.modal-actions{display:flex;gap:8px;padding:10px 16px;border-top:1px solid var(--border);background:var(--bg);align-items:center;flex-shrink:0;flex-wrap:wrap}
+.btn-copy-url{padding:6px 14px;border-radius:6px;border:1px solid var(--border);background:var(--white);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--text-muted);transition:all .13s}
+.btn-copy-url:hover{background:var(--accent);color:var(--navy);border-color:var(--navy)}
+.btn-orig{padding:6px 14px;border-radius:6px;border:1px solid var(--navy);background:var(--navy);color:#fff;font-size:13px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:5px;transition:background .13s}
+.btn-orig:hover{background:var(--navy-dark)}
+.btn-fav-modal{padding:6px 14px;border-radius:6px;border:1px solid var(--border);background:var(--white);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .13s}
+.btn-fav-modal.on{background:#fef9e7;border-color:#f9e79f}
+.copy-toast{font-size:12px;color:var(--green);font-weight:700;display:none}
+.copy-toast.show{display:block}
+.loading{text-align:center;padding:52px 20px;color:var(--text-muted);font-size:15px}
+.spinner{width:34px;height:34px;border:3px solid var(--border);border-top-color:var(--navy);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px}
 @keyframes spin{to{transform:rotate(360deg)}}
-
-.detail-page{display:none;flex:1;flex-direction:column;background:#fff;overflow:auto}
-.detail-back{padding:12px 20px;border-bottom:1px solid #eee;background:#f8f9fc}
-.detail-back button{background:none;border:1px solid #cdd3e0;padding:5px 14px;border-radius:4px;font-size:12px;cursor:pointer;color:#555}
-.detail-back button:hover{background:#eee}
-.detail-content{padding:20px}
-.detail-title{font-size:18px;font-weight:700;color:#1a3a6c;padding-bottom:14px;border-bottom:2px solid #1a3a6c;margin-bottom:16px}
-.detail-info-table{width:100%;border-collapse:collapse;margin-bottom:20px;font-size:13px}
-.detail-info-table th{background:#f5f7fa;border:1px solid #dde3ed;padding:8px 14px;font-weight:600;color:#444;width:120px;text-align:left}
-.detail-info-table td{border:1px solid #dde3ed;padding:8px 14px;color:#333}
-.attach-section{margin-bottom:20px}
-.attach-section h3{font-size:13px;font-weight:700;color:#333;margin-bottom:10px}
-.file-item{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border:1px solid #dde3ed;border-radius:4px;margin-bottom:6px;background:#f9fbff}
-.file-name{color:#1155cc;font-size:13px;display:flex;align-items:center;gap:6px}
-.file-ext{font-size:11px;padding:2px 6px;border-radius:3px;font-weight:600}
-.ext-pdf{background:#ffebeb;color:#c00}
-.ext-hwp{background:#ebf0ff;color:#1a3a6c}
-.ext-docx{background:#e8ffe8;color:#1a6b1a}
-.file-btns{display:flex;gap:6px}
-.btn-preview{padding:5px 14px;background:#f0f4ff;color:#1a3a6c;border:1px solid #c0cce8;border-radius:4px;font-size:12px;cursor:pointer}
-.btn-preview:hover{background:#dbe5ff}
-.btn-download{padding:5px 14px;background:#1a3a6c;color:#fff;border:none;border-radius:4px;font-size:12px;cursor:pointer}
-.btn-download:hover{background:#152f5a}
-.btn-disabled{padding:5px 14px;background:#ccc;color:#888;border:none;border-radius:4px;font-size:12px;cursor:not-allowed}
-
-.preview-area{border:1px solid #dde3ed;border-radius:4px;overflow:hidden;background:#eee;min-height:400px;display:flex;align-items:center;justify-content:center}
-.preview-area iframe{width:100%;height:600px;border:none}
-.preview-placeholder{text-align:center;color:#888;padding:40px}
-.preview-placeholder p{margin-top:8px;font-size:12px}
-
-.empty-row td{text-align:center;padding:60px;color:#999}
+.empty{text-align:center;padding:44px 20px;color:var(--text-muted);font-size:14px}
 </style>
 </head>
 <body>
-
-<div class="header">
-  <div class="header-left">
-    <h1>파산·회생 자산매각 공고 게시판</h1>
-    <p>대법원 회생·파산 자산매각 공고 (scourt.go.kr) 수집 데이터</p>
-  </div>
-  <div class="header-right">
-    <button class="btn-update" onclick="loadData()">🔄 업데이트</button>
-    <div class="header-info" id="headerInfo">마지막 확인: —</div>
-    <div class="header-info" id="headerBadge"></div>
-  </div>
-</div>
-
-<div class="container">
-  <div class="sidebar">
-    <div class="sidebar-title">구분별</div>
-    <div id="catList"></div>
-  </div>
-
-  <div class="main" id="listPage">
-    <div class="search-bar">
-      <select class="search-select" id="searchField">
-        <option value="all">전체</option>
-        <option value="title">제목</option>
-        <option value="org">매각기관</option>
-        <option value="court">관할법원</option>
-      </select>
-      <input class="search-input" id="searchInput" placeholder="검색어를 입력하세요" onkeydown="if(event.key==='Enter')doSearch()">
-      <button class="btn-search" onclick="doSearch()">검색</button>
-      <button class="btn-reset" onclick="doReset()">초기화</button>
+<header>
+  <h1>📋 대법원 파산·회생 자산매각 공고</h1>
+  <span class="sub">scourt.go.kr 자동 수집</span>
+  <div class="header-right" id="updatedAt">로딩 중…</div>
+</header>
+<div class="layout">
+  <aside>
+    <div class="sidebar-scroll">
+      <div class="sidebar-title">카테고리</div>
+      <div id="catList"></div>
     </div>
-    <div class="table-area">
-      <div class="table-meta">
-        <span id="metaText">총 <b>0</b>건</span>
-        <span id="pageInfo">1/1 페이지</span>
+    <div class="sidebar-bottom">
+      <button class="sidebar-tab" id="tabStats" onclick="showView('stats')">📊 통계 보기</button>
+    </div>
+  </aside>
+  <main>
+    <!-- 공고 목록 뷰 -->
+    <div class="view active" id="viewList">
+      <div class="dashboard">
+        <div class="stat-card"><div class="s-label">전체 공고</div><div class="s-val" id="sTotal">—</div><div class="s-sub">건</div></div>
+        <div class="stat-card ok"><div class="s-label">이번 주 신규</div><div class="s-val" id="sWeek">—</div><div class="s-sub">7일 이내</div></div>
+        <div class="stat-card urgent"><div class="s-label">마감 7일 이내</div><div class="s-val" id="sD7">—</div><div class="s-sub">건</div></div>
+        <div class="stat-card muted"><div class="s-label">공고 만료</div><div class="s-val" id="sExpired">—</div><div class="s-sub">건</div></div>
       </div>
-      <table>
-        <thead>
-          <tr>
-            <th style="width:54px">번호</th>
-            <th style="width:100px">관할법원</th>
-            <th style="width:200px">매각기관</th>
-            <th class="left">제목</th>
-            <th style="width:86px">작성일</th>
-            <th style="width:40px"></th>
-          </tr>
-        </thead>
-        <tbody id="tableBody">
-          <tr class="loading-row"><td colspan="6"><span class="spinner"></span>데이터를 불러오는 중...</td></tr>
-        </tbody>
-      </table>
+      <div class="filters">
+        <div class="filter-row">
+          <span class="filter-label">🔍 검색</span>
+          <input type="text" id="searchInput" placeholder="제목, 기관, 법원 검색…" oninput="applyFilters()">
+        </div>
+        <div class="filter-row">
+          <span class="filter-label">📅 작성일</span>
+          <input type="date" id="dateFrom" onchange="applyFilters()">
+          <span class="filter-sep">~</span>
+          <input type="date" id="dateTo" onchange="applyFilters()">
+        </div>
+        <div class="filter-row">
+          <span class="filter-label">⏰ 만료일</span>
+          <input type="date" id="endDateFrom" onchange="applyFilters()">
+          <span class="filter-sep">~</span>
+          <input type="date" id="endDateTo" onchange="applyFilters()">
+        </div>
+      </div>
+      <div class="toolbar">
+        <button class="sort-btn active" data-sort="newest" onclick="setSort('newest')">최신순</button>
+        <button class="sort-btn" data-sort="oldest" onclick="setSort('oldest')">오래된순</button>
+        <button class="sort-btn" data-sort="deadline" onclick="setSort('deadline')">마감임박순</button>
+        <span class="result-count" id="resultCount"></span>
+        <button class="btn-reset" onclick="resetFilters()">필터 초기화</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th style="width:42px">#</th>
+            <th style="width:120px">관할법원</th>
+            <th style="width:320px">매각기관</th>
+            <th>공고 제목</th>
+            <th style="width:100px">작성일</th>
+            <th style="width:150px">공고만료일</th>
+          </tr></thead>
+          <tbody id="noticeBody"><tr><td colspan="6"><div class="loading"><div class="spinner"></div>데이터를 불러오는 중입니다…</div></td></tr></tbody>
+        </table>
+      </div>
       <div class="pagination" id="pagination"></div>
     </div>
-  </div>
 
-  <div class="detail-page" id="detailPage">
-    <div class="detail-back">
-      <button onclick="goBack()">← 목록으로</button>
+    <!-- 통계 뷰 -->
+    <div class="view" id="viewStats">
+      <div class="stats-view">
+        <h2>📊 공고 통계</h2>
+        <div class="stats-section">
+          <div class="stats-section-title">📈 월별 공고 추이 (작성일 기준 · 장기 누적)</div>
+          <div class="chart-bars" id="monthlyChart"></div>
+        </div>
+        <div class="stats-section">
+          <div class="stats-section-title">🏛 법원별 공고 수 순위 (상위 15개)</div>
+          <div class="court-bars" id="courtChart"></div>
+        </div>
+      </div>
     </div>
-    <div class="detail-content" id="detailContent"></div>
+  </main>
+</div>
+
+<!-- 모달 -->
+<div class="modal-overlay" id="modalOverlay" onclick="handleOverlayClick(event)">
+  <div class="modal" id="modalBox">
+    <div class="modal-content">
+      <div class="modal-left" id="modalLeft"></div>
+      <div class="modal-right" id="modalRight">
+        <div class="modal-close-bar">
+          <button class="modal-close" onclick="closeDetail()">✕ 닫기</button>
+        </div>
+        <div id="pdfArea" style="display:flex;flex-direction:column;flex:1;overflow:hidden"></div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-copy-url" onclick="copyDetailUrl()">🔗 URL 복사</button>
+      <span class="copy-toast" id="copyToast">복사 완료!</span>
+      <button class="btn-fav-modal" id="favModalBtn" onclick="toggleFavModal()">☆ 즐겨찾기</button>
+      <a id="modalOrigLink" href="#" target="_blank" class="btn-orig">↗ 대법원 원본</a>
+    </div>
   </div>
 </div>
 
 <script>
-// notices.json 의 실제 필드명에 맞춤
-// id, seq_id, court, org, title, date, files[], end_date, phone, detail_url
+const DATA_URL        = 'https://raw.githubusercontent.com/gumago1357/scourt-notices/main/data/notices.json';
+const STATS_URL       = 'https://raw.githubusercontent.com/gumago1357/scourt-notices/main/data/monthly_stats.json';
+const FILES_BASE      = 'https://gumago1357.github.io/scourt-notices/files/';
+const PER_PAGE        = 20;
+const FAV_KEY         = 'scourt_favorites';
+const MEMO_KEY        = 'scourt_memos';
+const VISIT_KEY       = 'scourt_last_visit';
 
-const DATA_URL  = "https://raw.githubusercontent.com/gumago1357/scourt-notices/main/data/notices.json";
-const FILES_BASE = "https://gumago1357.github.io/scourt-notices/files/";
-const PAGE_SIZE = 20;
-
-let allData      = [];
-let filteredData = [];
-let currentCat   = "전체";
-let currentPage  = 1;
-let searchWord   = "";
-let searchField  = "all";
-
-// 카테고리: 제목+기관 키워드로 자동 분류
-function detectCat(r) {
-  const text = (r.title || "") + " " + (r.org || "");
-  if (/부동산|토지|건물|아파트|상가|임야|전답|주택|오피스텔|점포/.test(text)) return "부동산";
-  if (/자동차|차량|트럭|버스|승용/.test(text)) return "자동차·차량";
-  if (/채권|어음|수표|매출채권/.test(text)) return "채권";
-  if (/특허|상표|저작권|지식재산/.test(text)) return "특허·지식재산";
-  if (/비품|집기|가구|사무용/.test(text)) return "비품·집기";
-  if (/기계|장비|설비|공장/.test(text)) return "기계·장비";
-  if (/재고|상품|원자재|물품/.test(text)) return "재고·상품";
-  if (/유체동산/.test(text)) return "유체동산";
-  if (/주식|지분|출자/.test(text)) return "주식·지분";
-  if (/회원권/.test(text)) return "회원권";
-  if (/분양권/.test(text)) return "분양권";
-  if (/자산|동산/.test(text)) return "자산(일반)";
-  return "기타";
-}
-
-const CATS = [
-  "전체","부동산","자산(일반)","채권","특허·지식재산",
-  "자동차·차량","비품·집기","기계·장비","재고·상품",
-  "유체동산","주식·지분","기타","회원권","분양권"
+const CATEGORIES = [
+  {key:'all',label:'전체'},
+  {key:'부동산',label:'🏠 부동산'},
+  {key:'자산(일반)',label:'📦 자산(일반)'},
+  {key:'채권',label:'💳 채권'},
+  {key:'특허·지식재산',label:'💡 특허·지식재산'},
+  {key:'자동차·차량',label:'🚗 자동차·차량'},
+  {key:'비품·집기',label:'🪑 비품·집기'},
+  {key:'기계·장비',label:'⚙️ 기계·장비'},
+  {key:'재고·상품',label:'🛍️ 재고·상품'},
+  {key:'유체동산',label:'📦 유체동산'},
+  {key:'주식·지분',label:'📈 주식·지분'},
+  {key:'회원권',label:'🎫 회원권'},
+  {key:'분양권',label:'🏗️ 분양권'},
+  {key:'기타',label:'📌 기타'},
+  {key:'메모',label:'📝 메모한 공고'},
+  {key:'즐겨찾기',label:'⭐ 즐겨찾기'},
 ];
 
-async function loadData() {
-  const btn = document.querySelector('.btn-update');
-  btn.textContent = '⏳ 불러오는 중...';
-  btn.disabled = true;
+let allNotices=[], filtered=[], currentPage=1, currentCat='all', currentSort='newest', activeDetail=null;
+let favorites=new Set(), memos={}, lastVisit=null, newIds=new Set();
+let pdfUrls=[], monthlyStats={};
 
-  try {
-    const res  = await fetch(DATA_URL + "?t=" + Date.now());
-    const json = await res.json();
-    // notices.json 구조: { updated, count, notices: [...] }
-    const notices = json.notices || (Array.isArray(json) ? json : []);
+function loadStorage(){
+  try{
+    const f=localStorage.getItem(FAV_KEY); if(f)favorites=new Set(JSON.parse(f));
+    const m=localStorage.getItem(MEMO_KEY); if(m)memos=JSON.parse(m);
+    const v=localStorage.getItem(VISIT_KEY); if(v)lastVisit=new Date(v);
+  }catch(e){}
+}
+function saveStorage(){
+  try{
+    localStorage.setItem(FAV_KEY,JSON.stringify([...favorites]));
+    localStorage.setItem(MEMO_KEY,JSON.stringify(memos));
+    localStorage.setItem(VISIT_KEY,new Date().toISOString());
+  }catch(e){}
+}
 
-    // cat 필드 자동 생성
-    allData = notices.map(r => ({ ...r, cat: detectCat(r) }));
+(async function init(){
+  loadStorage();
+  buildSidebar();
+  await fetchData();
+  saveStorage();
+  handleInitialHash();
+})();
 
-    document.getElementById("headerInfo").textContent =
-      "마지막 확인: " + (json.updated || "—");
-    document.getElementById("headerBadge").innerHTML =
-      `📋 새 파일 <span>${allData.filter(r=>r.files&&r.files.length>0).length}</span>개 · 새 공고 <span>${allData.length}</span>건`;
-  } catch(e) {
-    console.error("데이터 로드 실패:", e);
-    document.getElementById("tableBody").innerHTML =
-      `<tr class="empty-row"><td colspan="6">데이터 로드에 실패했습니다.</td></tr>`;
+async function fetchData(){
+  try{
+    const res=await fetch(DATA_URL+'?t='+Date.now());
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const json=await res.json();
+    allNotices=json.notices||[];
+    document.getElementById('updatedAt').textContent='최종 갱신: '+(json.updated||'—');
+    if(lastVisit){
+      allNotices.forEach(n=>{
+        const d=parseDateStr(n.date);
+        if(d&&d>lastVisit)newIds.add(String(n.seq_id));
+      });
+    }
+    updateDashboard();
+    buildSidebar();
+    applyFilters();
+  }catch(e){
+    document.getElementById('noticeBody').innerHTML=`<tr><td colspan="6"><div class="loading" style="color:#c0392b">데이터를 불러오지 못했습니다.<br><small>${e.message}</small></div></td></tr>`;
+  }
+  try{
+    const res2=await fetch(STATS_URL+'?t='+Date.now());
+    if(res2.ok){const j=await res2.json();monthlyStats=j.monthly||{};}
+  }catch(e){}
+}
+
+function detectCat(n){
+  const t=(n.title+' '+(n.org||'')).toLowerCase();
+  if(/부동산|토지|건물|아파트|상가|오피스텔|주택|빌딩|대지|임야/.test(t))return'부동산';
+  if(/특허|상표|실용신안|저작권|지식재산|무형자산/.test(t))return'특허·지식재산';
+  if(/자동차|차량|승용차|화물차|트럭|버스|오토바이|중기/.test(t))return'자동차·차량';
+  if(/채권|대출금|매출채권|어음|받을/.test(t))return'채권';
+  if(/비품|집기|가구|사무용품|책상|의자|컴퓨터/.test(t))return'비품·집기';
+  if(/기계|장비|설비|공작|제조|CNC|press|프레스/.test(t))return'기계·장비';
+  if(/재고|상품|원재료|제품/.test(t))return'재고·상품';
+  if(/유체동산/.test(t))return'유체동산';
+  if(/주식|지분|출자금|증권|사채/.test(t))return'주식·지분';
+  if(/회원권|골프|헬스|클럽/.test(t))return'회원권';
+  if(/분양권|입주권|청약/.test(t))return'분양권';
+  if(/자산|동산/.test(t))return'자산(일반)';
+  return'기타';
+}
+
+function buildSidebar(){
+  const counts={};
+  CATEGORIES.forEach(c=>counts[c.key]=0);
+  allNotices.forEach(n=>{
+    const cat=detectCat(n);
+    counts[cat]=(counts[cat]||0)+1;
+    counts['all']++;
+    if(favorites.has(String(n.seq_id)))counts['즐겨찾기']=(counts['즐겨찾기']||0)+1;
+    if(memos[String(n.seq_id)])counts['메모']=(counts['메모']||0)+1;
+  });
+  document.getElementById('catList').innerHTML=CATEGORIES.map(c=>`
+    <button class="cat-item ${currentCat===c.key?'active':''}" onclick="setCat('${c.key}')">
+      <span>${c.label}</span><span class="cat-badge">${counts[c.key]||0}</span>
+    </button>`).join('');
+}
+
+function setCat(cat){
+  currentCat=cat;currentPage=1;
+  showView('list');
+  buildSidebar();applyFilters();
+}
+
+function showView(v){
+  document.getElementById('viewList').classList.toggle('active',v==='list');
+  document.getElementById('viewStats').classList.toggle('active',v==='stats');
+  document.getElementById('tabStats').classList.toggle('active',v==='stats');
+  if(v==='stats')buildStatsView();
+}
+
+function updateDashboard(){
+  const today=new Date();today.setHours(0,0,0,0);
+  const d7=new Date(today);d7.setDate(today.getDate()+7);
+  const d7ago=new Date(today);d7ago.setDate(today.getDate()-7);
+  let week=0,d7cnt=0,expired=0;
+  allNotices.forEach(n=>{
+    const nd=parseDateStr(n.date);
+    if(nd&&nd>=d7ago&&nd<=today)week++;
+    const ed=parseDateStr(n.end_date);
+    if(ed){if(ed<today)expired++;else if(ed<=d7)d7cnt++;}
+  });
+  setText('sTotal',allNotices.length.toLocaleString());
+  setText('sWeek',week.toLocaleString());
+  setText('sD7',d7cnt.toLocaleString());
+  setText('sExpired',expired.toLocaleString());
+}
+function setText(id,v){const e=document.getElementById(id);if(e)e.textContent=v;}
+
+function buildStatsView(){
+  // 월별 차트: monthly_stats.json(장기누적) + 현재 notices.json 병합
+  const combined=Object.assign({},monthlyStats);
+  allNotices.forEach(n=>{
+    if(!n.date)return;
+    const d=parseDateStr(n.date);if(!d)return;
+    const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+    combined[key]=(combined[key]||0)+1; // 현재 데이터로 해당 월 덮어쓰기
+  });
+  // 현재 notices에 있는 월은 덮어쓰기 (중복방지)
+  const currentMonths={};
+  allNotices.forEach(n=>{
+    if(!n.date)return;
+    const d=parseDateStr(n.date);if(!d)return;
+    const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+    currentMonths[key]=(currentMonths[key]||0)+1;
+  });
+  Object.assign(combined,currentMonths);
+
+  const keys=Object.keys(combined).sort();
+  const maxV=Math.max(...Object.values(combined),1);
+  document.getElementById('monthlyChart').innerHTML=keys.map(k=>{
+    const pct=Math.round((combined[k]/maxV)*100);
+    const mon=k.slice(0,4)+'년 '+parseInt(k.slice(5))+'월';
+    return`<div class="chart-bar-wrap">
+      <div class="chart-val">${combined[k]}</div>
+      <div class="chart-bar" style="height:${Math.max(pct*1.4,2)}px" title="${mon}: ${combined[k]}건"></div>
+      <div class="chart-label">${k.slice(5)}월</div>
+    </div>`;
+  }).join('');
+
+  // 법원별 순위
+  const courtCounts={};
+  allNotices.forEach(n=>{if(n.court)courtCounts[n.court]=(courtCounts[n.court]||0)+1;});
+  const sorted=Object.entries(courtCounts).sort((a,b)=>b[1]-a[1]).slice(0,15);
+  const maxC=sorted[0]?sorted[0][1]:1;
+  document.getElementById('courtChart').innerHTML=sorted.map(([name,cnt])=>{
+    const pct=Math.round((cnt/maxC)*100);
+    return`<div class="court-bar-row">
+      <div class="court-name">${esc(name)}</div>
+      <div class="court-bar-bg">
+        <div class="court-bar-fill" style="width:${pct}%">
+          <span class="court-bar-val">${cnt}건</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function parseDateStr(s){
+  if(!s)return null;
+  const d=new Date(s.replace(/\./g,'-').trim().slice(0,10));
+  return isNaN(d)?null:d;
+}
+function toInputDate(s){if(!s)return'';return s.replace(/\./g,'-').trim().slice(0,10);}
+
+function ddayBadge(end_date){
+  if(!end_date)return'';
+  const today=new Date();today.setHours(0,0,0,0);
+  const ed=parseDateStr(end_date);if(!ed)return'';
+  const diff=Math.round((ed-today)/86400000);
+  if(diff<0)return`<span class="dday gray">만료</span>`;
+  if(diff===0)return`<span class="dday red">D-day</span>`;
+  if(diff<=7)return`<span class="dday red">D-${diff}</span>`;
+  if(diff<=30)return`<span class="dday yel">D-${diff}</span>`;
+  return`<span class="dday grn">D-${diff}</span>`;
+}
+
+function isUrgentRow(end_date){
+  if(!end_date)return false;
+  const today=new Date();today.setHours(0,0,0,0);
+  const ed=parseDateStr(end_date);if(!ed)return false;
+  const diff=Math.round((ed-today)/86400000);
+  return diff>=0&&diff<=3;
+}
+
+function hlText(s){
+  const q=document.getElementById('searchInput').value.trim();
+  if(!q||!s)return esc(s||'');
+  const re=new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi');
+  return esc(s).replace(re,'<mark class="hl">$1</mark>');
+}
+
+function applyFilters(){
+  const q=document.getElementById('searchInput').value.trim().toLowerCase();
+  const dfrom=document.getElementById('dateFrom').value;
+  const dto=document.getElementById('dateTo').value;
+  const edfrom=document.getElementById('endDateFrom').value;
+  const edto=document.getElementById('endDateTo').value;
+  filtered=allNotices.filter(n=>{
+    if(currentCat==='즐겨찾기'&&!favorites.has(String(n.seq_id)))return false;
+    else if(currentCat==='메모'&&!memos[String(n.seq_id)])return false;
+    else if(currentCat!=='all'&&currentCat!=='즐겨찾기'&&currentCat!=='메모'&&detectCat(n)!==currentCat)return false;
+    if(q&&!(n.title.toLowerCase().includes(q)||(n.org||'').toLowerCase().includes(q)||(n.court||'').toLowerCase().includes(q)))return false;
+    const nd=toInputDate(n.date);
+    if(dfrom&&nd<dfrom)return false;
+    if(dto&&nd>dto)return false;
+    const ed=toInputDate(n.end_date);
+    if(edfrom&&ed<edfrom)return false;
+    if(edto&&ed>edto)return false;
+    return true;
+  });
+  sortFiltered();currentPage=1;renderTable();renderPagination();
+}
+
+function sortFiltered(){
+  filtered.sort((a,b)=>{
+    if(currentSort==='newest')return Number(b.seq_id||0)-Number(a.seq_id||0);
+    if(currentSort==='oldest')return Number(a.seq_id||0)-Number(b.seq_id||0);
+    if(currentSort==='deadline'){
+      const da=parseDateStr(a.end_date)||new Date(9e15);
+      const db=parseDateStr(b.end_date)||new Date(9e15);
+      return da-db;
+    }
+  });
+}
+
+function setSort(s){
+  currentSort=s;
+  document.querySelectorAll('.sort-btn').forEach(btn=>btn.classList.toggle('active',btn.dataset.sort===s));
+  currentPage=1;applyFilters();
+}
+
+function resetFilters(){
+  document.getElementById('searchInput').value='';
+  ['dateFrom','dateTo','endDateFrom','endDateTo'].forEach(id=>document.getElementById(id).value='');
+  currentCat='all';currentSort='newest';
+  document.querySelectorAll('.sort-btn').forEach(btn=>btn.classList.toggle('active',btn.dataset.sort==='newest'));
+  buildSidebar();applyFilters();
+}
+
+function toggleFav(seqId,e){
+  e.stopPropagation();
+  const id=String(seqId);
+  if(favorites.has(id))favorites.delete(id);else favorites.add(id);
+  saveStorage();buildSidebar();renderTable();
+  if(activeDetail&&String(activeDetail.seq_id)===id)updateFavModalBtn();
+}
+
+function updateFavModalBtn(){
+  const btn=document.getElementById('favModalBtn');
+  if(!btn||!activeDetail)return;
+  const on=favorites.has(String(activeDetail.seq_id));
+  btn.textContent=on?'★ 즐겨찾기 해제':'☆ 즐겨찾기';
+  btn.classList.toggle('on',on);
+}
+
+function toggleFavModal(){
+  if(!activeDetail)return;
+  const id=String(activeDetail.seq_id);
+  if(favorites.has(id))favorites.delete(id);else favorites.add(id);
+  saveStorage();buildSidebar();renderTable();updateFavModalBtn();
+}
+
+function renderTable(){
+  const total=filtered.length;
+  document.getElementById('resultCount').innerHTML=`총 <b>${total.toLocaleString()}</b>건`;
+  const start=(currentPage-1)*PER_PAGE;
+  const page=filtered.slice(start,start+PER_PAGE);
+  if(!page.length){document.getElementById('noticeBody').innerHTML=`<tr><td colspan="6"><div class="empty">검색 결과가 없습니다.</div></td></tr>`;return;}
+  document.getElementById('noticeBody').innerHTML=page.map((n,i)=>{
+    const idx=start+i+1;
+    const isFav=favorites.has(String(n.seq_id));
+    const isNew=newIds.has(String(n.seq_id));
+    const hasMemo=!!memos[String(n.seq_id)];
+    const urgent=isUrgentRow(n.end_date);
+    return`<tr class="${urgent?'urgent-row':''}" onclick="openDetail('${n.seq_id}')">
+      <td class="num">${idx}</td>
+      <td class="court">${hlText(n.court||'—')}</td>
+      <td class="org" title="${esc(n.org||'')}">${hlText(n.org||'—')}</td>
+      <td class="title">${hlText(n.title||'—')}${isNew?'<span class="new-badge">NEW</span>':''}${hasMemo?'<span class="memo-dot" title="메모 있음">📝</span>':''}<button class="fav-btn ${isFav?'on':''}" onclick="toggleFav('${n.seq_id}',event)">${isFav?'★':'☆'}</button></td>
+      <td class="date-col">${n.date||'—'}</td>
+      <td class="end-col">${n.end_date||'—'}${ddayBadge(n.end_date)}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderPagination(){
+  const totalPages=Math.ceil(filtered.length/PER_PAGE);
+  if(totalPages<=1){document.getElementById('pagination').innerHTML='';return;}
+  const W=5;let s=Math.max(1,currentPage-Math.floor(W/2)),e=Math.min(totalPages,s+W-1);
+  if(e-s<W-1)s=Math.max(1,e-W+1);
+  let html=`<button class="page-btn" ${currentPage===1?'disabled':''} onclick="goPage(${currentPage-1})">‹</button>`;
+  if(s>1){html+=`<button class="page-btn" onclick="goPage(1)">1</button>`;if(s>2)html+=`<span style="padding:0 4px;color:var(--text-muted)">…</span>`;}
+  for(let p=s;p<=e;p++)html+=`<button class="page-btn ${p===currentPage?'active':''}" onclick="goPage(${p})">${p}</button>`;
+  if(e<totalPages){if(e<totalPages-1)html+=`<span style="padding:0 4px;color:var(--text-muted)">…</span>`;html+=`<button class="page-btn" onclick="goPage(${totalPages})">${totalPages}</button>`;}
+  html+=`<button class="page-btn" ${currentPage===totalPages?'disabled':''} onclick="goPage(${currentPage+1})">›</button>`;
+  document.getElementById('pagination').innerHTML=html;
+}
+
+function goPage(p){
+  currentPage=p;
+  history.replaceState({page:p},'','');
+  renderTable();renderPagination();
+  document.querySelector('.table-wrap').scrollTop=0;
+}
+
+function openDetail(seqId){
+  const notice=allNotices.find(n=>String(n.seq_id)===String(seqId));
+  if(!notice)return;
+  activeDetail=notice;
+  try{history.pushState({seqId},'','#detail-'+seqId);}catch(e){}
+  document.getElementById('modalOrigLink').href=notice.detail_url||'#';
+
+  const today=new Date();today.setHours(0,0,0,0);
+  const ed=parseDateStr(notice.end_date);
+  let ddayText='';
+  if(ed){
+    const diff=Math.round((ed-today)/86400000);
+    ddayText=diff<0?' <span style="color:var(--gray)">(만료)</span>'
+      :diff===0?' <span style="color:var(--red);font-weight:700">(D-day)</span>'
+      :diff<=7?` <span style="color:var(--red);font-weight:700">(D-${diff})</span>`
+      :diff<=30?` <span style="color:#b07900;font-weight:700">(D-${diff})</span>`
+      :` <span style="color:var(--green);font-weight:700">(D-${diff})</span>`;
   }
 
-  btn.textContent = '🔄 업데이트';
-  btn.disabled = false;
-
-  currentCat  = "전체";
-  currentPage = 1;
-  renderCats();
-  applyFilter();
-}
-
-function countCat(cat) {
-  if (cat === "전체") return allData.length;
-  return allData.filter(r => r.cat === cat).length;
-}
-
-function renderCats() {
-  document.getElementById("catList").innerHTML = CATS.map(cat => {
-    const cnt = countCat(cat);
-    return `<div class="cat-item${currentCat===cat?' active':''}" onclick="selectCat('${cat}')">
-      <span>${cat}</span><span class="cat-count">${cnt}</span>
-    </div>`;
-  }).join("");
-}
-
-function selectCat(cat) {
-  currentCat  = cat;
-  currentPage = 1;
-  renderCats();
-  applyFilter();
-}
-
-function applyFilter() {
-  let d = allData;
-  if (currentCat !== "전체") d = d.filter(r => r.cat === currentCat);
-  if (searchWord) {
-    const w = searchWord.toLowerCase();
-    d = d.filter(r => {
-      if (searchField === "title")  return (r.title||"").toLowerCase().includes(w);
-      if (searchField === "org")    return (r.org||"").toLowerCase().includes(w);
-      if (searchField === "court")  return (r.court||"").toLowerCase().includes(w);
-      return (r.title||"").toLowerCase().includes(w)
-          || (r.org||"").toLowerCase().includes(w)
-          || (r.court||"").toLowerCase().includes(w);
+  const memoVal=memos[String(notice.seq_id)]||'';
+  const files=notice.files||[];
+  let fileHtml='';
+  if(files.length){
+    fileHtml=`<hr class="divider"><div class="file-list-title">📎 첨부파일 (${files.length}개)</div>`;
+    files.forEach(f=>{
+      const ext=(f.ext||'').toLowerCase();
+      const icon=ext==='pdf'?'📄':['hwp','hwpx'].includes(ext)?'📝':['xls','xlsx'].includes(ext)?'📊':'📁';
+      const fileUrl=f.local?FILES_BASE+f.local:f.url;
+      const isHwp=['hwp','hwpx'].includes(ext);
+      fileHtml+=`<div class="file-item"><span class="file-icon">${icon}</span><span class="file-name">${esc(f.name||f.local||f.id)}</span><a href="${fileUrl}" download class="btn-dl">⬇</a></div>`;
+      if(isHwp)fileHtml+=`<div class="hwp-note">⚠️ HWP는 브라우저 미리보기 미지원</div>`;
     });
   }
-  filteredData = d;
-  renderTable();
-}
 
-function renderTable() {
-  const total      = filteredData.length;
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  if (currentPage > totalPages) currentPage = 1;
-  const start = (currentPage - 1) * PAGE_SIZE;
-  const rows  = filteredData.slice(start, start + PAGE_SIZE);
-
-  document.getElementById("metaText").innerHTML =
-    `총 <b>${total}</b>건${currentCat!=="전체"?` · 구분: <b>${currentCat}</b>`:""}`;
-  document.getElementById("pageInfo").textContent =
-    `${currentPage}/${totalPages} 페이지`;
-
-  const tbody = document.getElementById("tableBody");
-  if (rows.length === 0) {
-    tbody.innerHTML = `<tr class="empty-row"><td colspan="6">검색 결과가 없습니다.</td></tr>`;
-  } else {
-    tbody.innerHTML = rows.map((r, i) => {
-      const globalIdx = start + i;
-      const hasFiles  = r.files && r.files.length > 0;
-      const attachHtml = hasFiles
-        ? `<div class="attach-icon" onclick="event.stopPropagation();showDetail(${globalIdx})">📎<span>${r.files.length}</span></div>`
-        : "";
-      return `<tr onclick="showDetail(${globalIdx})" style="cursor:pointer">
-        <td class="td-no">${r.seq_id || r.id || ""}</td>
-        <td class="td-court">${r.court || ""}</td>
-        <td class="td-agency">${r.org || ""}</td>
-        <td class="td-title-wrap">
-          <a class="td-title-link" onclick="event.stopPropagation();showDetail(${globalIdx})">${r.title || ""}</a>
-        </td>
-        <td class="td-date">${r.date || ""}</td>
-        <td class="td-attach">${attachHtml}</td>
-      </tr>`;
-    }).join("");
-  }
-  renderPagination(totalPages);
-}
-
-function renderPagination(totalPages) {
-  const el = document.getElementById("pagination");
-  if (totalPages <= 1) { el.innerHTML = ""; return; }
-  let html = `<button class="page-btn" onclick="gotoPage(1)">«</button>
-    <button class="page-btn" onclick="gotoPage(${Math.max(1,currentPage-1)})">‹</button>`;
-  const s = Math.max(1, currentPage - 2);
-  const e = Math.min(totalPages, s + 4);
-  for (let i = s; i <= e; i++) {
-    html += `<button class="page-btn${i===currentPage?' active':''}" onclick="gotoPage(${i})">${i}</button>`;
-  }
-  html += `<button class="page-btn" onclick="gotoPage(${Math.min(totalPages,currentPage+1)})">›</button>
-    <button class="page-btn" onclick="gotoPage(${totalPages})">»</button>`;
-  el.innerHTML = html;
-}
-
-function gotoPage(p) { currentPage = p; renderTable(); window.scrollTo(0,0); }
-
-function doSearch() {
-  searchWord  = document.getElementById("searchInput").value.trim();
-  searchField = document.getElementById("searchField").value;
-  currentPage = 1;
-  applyFilter();
-}
-
-function doReset() {
-  document.getElementById("searchInput").value = "";
-  searchWord  = "";
-  searchField = "all";
-  currentCat  = "전체";
-  currentPage = 1;
-  renderCats();
-  applyFilter();
-}
-
-function getFileUrl(f) {
-  // local 값이 있으면 GitHub Pages에서 서빙
-  // local = "FAILED" 또는 "" 이면 원본 대법원 URL 사용
-  if (f.local && f.local !== "FAILED") {
-    return FILES_BASE + f.local;
-  }
-  return f.url || "";
-}
-
-function showDetail(idx) {
-  const item = filteredData[idx];
-  if (!item) return;
-
-  document.getElementById("listPage").style.display  = "none";
-  const dp = document.getElementById("detailPage");
-  dp.style.display = "flex";
-
-  const files    = item.files || [];
-  const filesHtml = files.length > 0 ? `
-    <div class="attach-section">
-      <h3>📎 첨부파일 (${files.length}건)</h3>
-      ${files.map((f, i) => {
-        const fileUrl  = getFileUrl(f);
-        const hasFail  = !f.local || f.local === "FAILED";
-        const extClass = f.ext === "pdf" ? "ext-pdf" : f.ext === "hwp" ? "ext-hwp" : "ext-docx";
-        return `
-        <div class="file-item">
-          <div class="file-name">
-            <span class="file-ext ${extClass}">${(f.ext||"FILE").toUpperCase()}</span>
-            ${f.name || "첨부파일"}
-            ${hasFail ? '<span style="color:#c00;font-size:11px">(수집실패)</span>' : ""}
-          </div>
-          <div class="file-btns">
-            ${f.ext === "pdf" && !hasFail
-              ? `<button class="btn-preview" onclick="previewFile('${fileUrl}','pdf','preview-${i}')">📄 미리보기</button>`
-              : ""}
-            ${fileUrl
-              ? `<button class="btn-download" onclick="window.open('${fileUrl}')">⬇ 다운로드</button>`
-              : `<button class="btn-disabled" disabled>다운로드 불가</button>`}
-          </div>
-        </div>
-        <div id="preview-${i}" style="display:none;margin-bottom:12px"></div>`;
-      }).join("")}
-    </div>` : "";
-
-  document.getElementById("detailContent").innerHTML = `
-    <div class="detail-title">${item.title || ""}</div>
-    <table class="detail-info-table">
-      <tr>
-        <th>번호</th><td>${item.seq_id || item.id || "—"}</td>
-        <th>작성일</th><td>${item.date || "—"}</td>
-      </tr>
-      <tr>
-        <th>관할법원</th><td>${item.court || "—"}</td>
-        <th>공고만료일</th><td>${item.end_date || "—"}</td>
-      </tr>
-      <tr>
-        <th>매각기관</th><td colspan="3">${item.org || "—"}</td>
-      </tr>
-      ${item.phone ? `<tr><th>전화번호</th><td colspan="3">${item.phone}</td></tr>` : ""}
-      ${item.detail_url ? `<tr><th>원본 링크</th><td colspan="3"><a href="${item.detail_url}" target="_blank" style="color:#1155cc">대법원 원문 보기 ↗</a></td></tr>` : ""}
-    </table>
-    ${filesHtml}
-    ${files.length === 0 ? '<p style="color:#888;font-size:13px">첨부파일이 없습니다.</p>' : ""}
+  document.getElementById('modalLeft').innerHTML=`
+    <div class="notice-title-box"><h2>${esc(notice.title||'—')}</h2></div>
+    <div class="meta-grid">
+      <div class="meta-row"><div class="meta-key">🏛 관할법원</div><div class="meta-val">${esc(notice.court||'—')}</div></div>
+      <div class="meta-row"><div class="meta-key">🏢 매각기관</div><div class="meta-val" style="font-size:12px;line-height:1.5">${esc(notice.org||'—')}</div></div>
+      <div class="meta-row"><div class="meta-key">📅 작성일</div><div class="meta-val">${notice.date||'—'}</div></div>
+      <div class="meta-row"><div class="meta-key">⏰ 공고만료일</div><div class="meta-val">${notice.end_date||'—'}${ddayText}</div></div>
+      ${notice.phone?`<div class="meta-row"><div class="meta-key">📞 전화번호</div><div class="meta-val">${esc(notice.phone)}</div></div>`:''}
+    </div>
+    ${fileHtml}
+    <div class="memo-section">
+      <div class="memo-label">📝 메모</div>
+      <textarea class="memo-textarea" id="memoInput" placeholder="이 공고에 대한 메모를 입력하세요…" oninput="saveMemo('${notice.seq_id}')">${esc(memoVal)}</textarea>
+      <div class="memo-saved" id="memoSaved">저장됨 ✓</div>
+    </div>
   `;
-}
 
-function previewFile(url, ext, previewId) {
-  const area = document.getElementById(previewId);
-  if (!area) return;
-  if (area.style.display === "block") {
-    area.style.display = "none";
-    return;
+  pdfUrls=[];
+  const pdfFiles=files.filter(f=>(f.ext||'').toLowerCase()==='pdf');
+  pdfUrls=pdfFiles.map(f=>f.local?FILES_BASE+f.local:f.url);
+  const pdfArea=document.getElementById('pdfArea');
+  if(pdfUrls.length){
+    let tabBar='';
+    if(pdfUrls.length>1){
+      tabBar=`<div class="pdf-tab-bar">${pdfFiles.map((f,i)=>{
+        const nm=f.name||f.local||('파일 '+(i+1));
+        return`<button class="pdf-tab ${i===0?'active':''}" onclick="switchPdfTab(${i})">${esc(nm.length>24?nm.slice(0,22)+'…':nm)}</button>`;
+      }).join('')}</div>`;
+    }
+    pdfArea.innerHTML=tabBar+`<div class="pdf-frame-wrap"><iframe id="pdfIframe" src="${pdfUrls[0]}" title="PDF 미리보기"></iframe></div>`;
+  }else{
+    pdfArea.innerHTML=`<div class="pdf-no-file">PDF 첨부파일이 없습니다.</div>`;
   }
-  area.style.display  = "block";
-  area.className      = "preview-area";
 
-  if (ext === "pdf") {
-    area.innerHTML = `<iframe src="${url}" style="width:100%;height:600px;border:none"></iframe>`;
-  } else {
-    area.innerHTML = `<div class="preview-placeholder">
-      <div style="font-size:40px">📄</div>
-      <p>이 파일 형식은 미리보기를 지원하지 않습니다.</p>
-      <button class="btn-download" style="margin-top:12px" onclick="window.open('${url}')">⬇ 다운로드</button>
-    </div>`;
+  updateFavModalBtn();
+  document.getElementById('modalOverlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+
+let memoTimer=null;
+function saveMemo(seqId){
+  const val=document.getElementById('memoInput').value.trim();
+  if(val)memos[String(seqId)]=val;
+  else delete memos[String(seqId)];
+  saveStorage();buildSidebar();renderTable();
+  clearTimeout(memoTimer);
+  const el=document.getElementById('memoSaved');
+  if(el){el.classList.add('show');memoTimer=setTimeout(()=>el.classList.remove('show'),1500);}
+}
+
+function switchPdfTab(idx){
+  const iframe=document.getElementById('pdfIframe');
+  if(iframe)iframe.src=pdfUrls[idx];
+  document.querySelectorAll('.pdf-tab').forEach((t,i)=>t.classList.toggle('active',i===idx));
+}
+
+function closeDetail(){
+  document.getElementById('modalOverlay').classList.remove('open');
+  document.body.style.overflow='';
+  activeDetail=null;
+  try{if(history.state&&history.state.seqId)history.replaceState(null,'',window.location.pathname+window.location.search);}catch(e){}
+}
+function handleOverlayClick(e){if(e.target===document.getElementById('modalOverlay'))closeDetail();}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDetail();});
+
+function handleInitialHash(){
+  const hash=window.location.hash;
+  if(hash&&hash.startsWith('#detail-')){
+    const seqId=hash.replace('#detail-','');
+    const tryOpen=()=>{if(allNotices.length>0)openDetail(seqId);else setTimeout(tryOpen,200);};
+    tryOpen();
   }
 }
+window.addEventListener('popstate',e=>{
+  const hash=window.location.hash;
+  if(hash&&hash.startsWith('#detail-'))openDetail(hash.replace('#detail-',''));
+  else closeDetail();
+});
 
-function goBack() {
-  document.getElementById("detailPage").style.display = "none";
-  document.getElementById("listPage").style.display   = "flex";
+function copyDetailUrl(){
+  if(!activeDetail)return;
+  const url=location.origin+location.pathname+'#detail-'+activeDetail.seq_id;
+  navigator.clipboard.writeText(url).then(()=>{
+    const t=document.getElementById('copyToast');t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000);
+  });
 }
 
-loadData();
+function esc(s){if(!s)return'';return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 </script>
 </body>
 </html>
