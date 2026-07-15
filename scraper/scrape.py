@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 """
-대법원 파산·회생 자산매각 공고 스크래퍼 v8
-- v7 대비: 작성일(date) 수집 추가
-- v8 대비: monthly_stats.json 누적 저장 추가
+대법원 파산·회생 자산매각 공고 스크래퍼 v9
+- v8 대비 변경:
+  1. file_id = '1784101847467_165047.pdf' 형태 그대로 사용 (확장자 포함)
+  2. 다운로드: Playwright 제거 → requests + Cloudflare 프록시로 교체
+     (실제 파일 서버: file.scourt.go.kr/AttachDownload, POST 방식)
+  3. build_existing_files_index(): 파일명 전체를 키로 사용
 """
 
 import asyncio
 import json
 import re
-import shutil
 import time
 from datetime import datetime
 from pathlib import Path
@@ -16,23 +18,22 @@ from urllib.parse import quote
 
 import requests
 from bs4 import BeautifulSoup
-from playwright.async_api import async_playwright, Page, TimeoutError as PWTimeout
 
 # ── 경로 설정
 BASE_DIR      = Path(__file__).parent.parent
 DATA_DIR      = BASE_DIR / "data"
 FILES_DIR     = BASE_DIR / "docs" / "files"
 NOTICES_JSON  = DATA_DIR / "notices.json"
-MONTHLY_JSON  = DATA_DIR / "monthly_stats.json"   # ★ 추가
+MONTHLY_JSON  = DATA_DIR / "monthly_stats.json"
 
 DATA_DIR.mkdir(exist_ok=True)
 FILES_DIR.mkdir(parents=True, exist_ok=True)
 
 # ── URL 상수
-BASE_URL     = "https://www.scourt.go.kr"
-LIST_URL     = BASE_URL + "/portal/notice/realestate/RealNoticeList.work"
-VIEW_URL     = BASE_URL + "/portal/notice/realestate/RealNoticeView.work"
-DOWNLOAD_URL = BASE_URL + "/portal/notice/realestate/RealNoticeFileDown.work"
+BASE_URL      = "https://www.scourt.go.kr"
+LIST_URL      = BASE_URL + "/portal/notice/realestate/RealNoticeList.work"
+VIEW_URL      = BASE_URL + "/portal/notice/realestate/RealNoticeView.work"
+FILE_DL_URL   = "https://file.scourt.go.kr/AttachDownload"   # ★ 실제 파일 서버
 
 # ── Cloudflare Worker 프록시
 PROXY_BASE = "https://scourt-proxy.gumago1357.workers.dev"
@@ -43,7 +44,7 @@ def proxy(url: str) -> str:
 # ── 딜레이 설정
 DELAY_LIST        = 2.0
 DELAY_DETAIL      = 2.0
-DELAY_FILE        = 5.0
+DELAY_FILE        = 3.0
 DELAY_RETRY_PAUSE = 30.0
 
 # ── HTTP 세션
@@ -56,6 +57,7 @@ SESSION.headers.update({
     ),
     "Accept":          "text/html,application/xhtml+xml,*/*;q=0.8",
     "Accept-Language": "ko-KR,ko;q=0.9",
+    "Referer":         BASE_URL,
 })
 
 def get_page(url: str, params: dict = None, retries: int = 3) -> BeautifulSoup | None:
@@ -109,17 +111,23 @@ def local_file_ok(local_val: str) -> bool:
     path = FILES_DIR / local_val
     return path.exists() and not is_broken_file(path)
 
-def build_existing_files_index() -> dict[str, str]:
+def build_existing_files_index() -> dict:
+    """
+    docs/files/ 폴더 스캔 → { file_id: 저장파일명 } 반환
+    file_id 예시: '1784101847467_165047.pdf'
+    저장파일명 예시: '1784101847467_165047.pdf'
+    """
     index = {}
     if not FILES_DIR.exists():
         return index
     for f in FILES_DIR.iterdir():
-        if f.is_file() and not is_broken_file(f):
-            stem  = f.stem
-            parts = stem.split("_")
-            for part in parts:
-                if len(part) >= 10 and part.isdigit():
-                    index[part] = f.name
+        if not f.is_file() or is_broken_file(f):
+            continue
+        # 파일명 그대로 file_id로 사용 (stem + suffix)
+        # 예: 1784101847467_165047.pdf → key = '1784101847467_165047.pdf'
+        index[f.name] = f.name
+        # stem만으로도 매칭 (확장자 없이 저장된 경우 대비)
+        index[f.stem] = f.name
     return index
 
 # ── 목록 수집
@@ -183,7 +191,7 @@ def scrape_all_list() -> list[dict]:
     print(f"\n  → 총 {len(all_notices)}건")
     return all_notices
 
-# ── 상세 수집 (작성일 포함)
+# ── 상세 수집
 DATE_LABELS = ("작성일", "등록일", "게시일", "작 성 일")
 
 def scrape_detail(seq_id: str, files_index: dict) -> dict:
@@ -210,7 +218,6 @@ def scrape_detail(seq_id: str, files_index: dict) -> dict:
         if not td:
             continue
         val = td.get_text(strip=True)
-
         if label in DATE_LABELS:
             m = re.search(r"\d{4}\.\d{2}\.\d{2}", val)
             result["date"] = m.group(0) if m else val
@@ -220,28 +227,44 @@ def scrape_detail(seq_id: str, files_index: dict) -> dict:
         elif label == "전화번호":
             result["phone"] = val
 
+    # ★ download('1784101847467_165047.pdf', '파일명.pdf') 형태 파싱
     dl_pattern = re.compile(
         r"download\s*\(\s*'([^']+)'\s*,\s*'([^']+)'\s*\)", re.IGNORECASE
     )
     seen_ids = set()
     for m in dl_pattern.finditer(str(soup)):
-        file_id   = m.group(1).strip()
-        file_name = m.group(2).strip()
+        file_id   = m.group(1).strip()   # '1784101847467_165047.pdf' 통째로
+        file_name = m.group(2).strip()   # 실제 표시 파일명
         if file_id in seen_ids:
             continue
         seen_ids.add(file_id)
 
+        # 확장자 추출
         ext = "pdf"
         nl  = file_name.lower()
         if nl.endswith((".hwp", ".hwpx")):
             ext = "hwp"
         elif nl.endswith((".docx", ".doc")):
             ext = "docx"
+        elif nl.endswith((".xls", ".xlsx")):
+            ext = "xlsx"
 
-        local_name = f"{file_id}.{ext}"
-        local_val  = ""
+        # 저장 파일명: file_id 그대로 사용 (이미 확장자 포함)
+        # file_id = '1784101847467_165047.pdf' → local_name = '1784101847467_165047.pdf'
+        if '.' in file_id:
+            local_name = file_id
+        else:
+            local_name = f"{file_id}.{ext}"
+
+        # 기존 파일 복원 확인
+        local_val = ""
         if file_id in files_index:
             existing = files_index[file_id]
+            if local_file_ok(FILES_DIR / existing):
+                local_val = existing
+                print(f"    [복원] {existing}")
+        elif local_name in files_index:
+            existing = files_index[local_name]
             if local_file_ok(FILES_DIR / existing):
                 local_val = existing
                 print(f"    [복원] {existing}")
@@ -249,10 +272,11 @@ def scrape_detail(seq_id: str, files_index: dict) -> dict:
         result["files"].append({
             "id":         file_id,
             "name":       file_name,
-            "url":        f"{DOWNLOAD_URL}?seq_id={seq_id}&file_id={file_id}",
+            "url":        f"{FILE_DL_URL}",   # POST 방식
             "ext":        ext,
             "local":      local_val,
             "local_name": local_name,
+            "path":       "011",              # form.path 값
         })
 
     if result["files"]:
@@ -262,14 +286,89 @@ def scrape_detail(seq_id: str, files_index: dict) -> dict:
 
     return result
 
-# ── ★ monthly_stats.json 저장 (누적, 덮어쓰기 방식)
+# ── ★ 파일 다운로드: requests + 프록시 (Playwright 완전 제거)
+def download_file_once(file_info: dict) -> str:
+    """
+    file.scourt.go.kr/AttachDownload 에 POST 요청으로 파일 다운로드
+    프록시를 통해 요청
+    """
+    file_id    = file_info["id"]
+    file_name  = file_info["name"]
+    local_name = file_info["local_name"]
+    path_val   = file_info.get("path", "011")
+    local_path = FILES_DIR / local_name
+
+    # 프록시를 통한 POST 요청
+    proxied_url = proxy(FILE_DL_URL)
+
+    post_data = {
+        "file":     file_id,
+        "path":     path_val,
+        "downFile": file_name,
+    }
+
+    try:
+        resp = SESSION.post(
+            proxied_url,
+            data=post_data,
+            timeout=60,
+            stream=True,
+        )
+        resp.raise_for_status()
+
+        # HTML 응답이면 실패
+        content_type = resp.headers.get("Content-Type", "")
+        if "text/html" in content_type:
+            print(f"    [실패] HTML 응답 (파일 아님)")
+            return ""
+
+        # 파일 저장
+        with open(local_path, "wb") as f:
+            for chunk in resp.iter_content(chunk_size=8192):
+                if chunk:
+                    f.write(chunk)
+
+        if is_broken_file(local_path):
+            local_path.unlink(missing_ok=True)
+            print(f"    [실패] 파일 손상")
+            return ""
+
+        size_kb = local_path.stat().st_size // 1024
+        print(f"    [완료] {local_name} ({size_kb} KB)")
+        return local_name
+
+    except Exception as e:
+        print(f"    [오류] {e}")
+        local_path.unlink(missing_ok=True)
+        return ""
+
+def download_file_with_retry(file_info: dict) -> str:
+    # 1차 3번
+    for i in range(1, 4):
+        print(f"    시도 {i}/3 (1차)")
+        result = download_file_once(file_info)
+        if result:
+            return result
+        if i < 3:
+            time.sleep(DELAY_FILE)
+
+    # 30초 대기 후 2차 3번
+    print(f"    → 1차 실패. {int(DELAY_RETRY_PAUSE)}초 대기 후 2차...")
+    time.sleep(DELAY_RETRY_PAUSE)
+
+    for i in range(1, 4):
+        print(f"    시도 {i}/3 (2차)")
+        result = download_file_once(file_info)
+        if result:
+            return result
+        if i < 3:
+            time.sleep(DELAY_FILE)
+
+    print(f"    → 최종 실패 → FAILED")
+    return "FAILED"
+
+# ── monthly_stats.json 저장
 def save_monthly_stats(notices: list[dict]):
-    """
-    작성일 기준 월별 공고 수를 계산해서 monthly_stats.json에 저장.
-    - 기존 파일의 과거 달 데이터는 유지
-    - 현재 notices에 있는 달은 새로 계산한 값으로 덮어쓰기 (중복 방지)
-    """
-    # 기존 데이터 로드
     existing_monthly = {}
     if MONTHLY_JSON.exists():
         try:
@@ -279,7 +378,6 @@ def save_monthly_stats(notices: list[dict]):
         except Exception as e:
             print(f"  [경고] monthly_stats.json 로드 실패: {e}")
 
-    # 현재 notices에서 월별 집계
     current_monthly: dict[str, int] = {}
     no_date_count = 0
     for n in notices:
@@ -294,109 +392,19 @@ def save_monthly_stats(notices: list[dict]):
         key = f"{m.group(1)}-{m.group(2)}"
         current_monthly[key] = current_monthly.get(key, 0) + 1
 
-    # 병합: 기존 과거 달 유지 + 현재 달 덮어쓰기
     merged = dict(existing_monthly)
-    merged.update(current_monthly)  # 같은 달은 새 값으로 덮어쓰기
+    merged.update(current_monthly)
 
     output = {
         "updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "monthly": dict(sorted(merged.items())),  # 날짜순 정렬
+        "monthly": dict(sorted(merged.items())),
     }
     with open(MONTHLY_JSON, "w", encoding="utf-8") as f:
         json.dump(output, f, ensure_ascii=False, indent=2)
 
-    total_months = len(merged)
-    total_counted = sum(merged.values())
-    print(f"  [저장] monthly_stats.json → {total_months}개월, 총 {total_counted}건")
+    print(f"  [저장] monthly_stats.json → {len(merged)}개월, 총 {sum(merged.values())}건")
     if no_date_count:
         print(f"  [참고] 작성일 없어서 집계 제외: {no_date_count}건")
-
-# ── 파일 다운로드 (Playwright)
-BROWSER_ARGS = [
-    "--no-sandbox", "--disable-setuid-sandbox",
-    "--disable-dev-shm-usage", "--disable-gpu",
-    "--disable-blink-features=AutomationControlled",
-]
-USER_AGENT = (
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-    "AppleWebKit/537.36 (KHTML, like Gecko) "
-    "Chrome/125.0.0.0 Safari/537.36"
-)
-
-async def try_download_once(page: Page, seq_id: str, file_info: dict) -> str:
-    file_id    = file_info["id"]
-    file_name  = file_info["name"]
-    file_url   = file_info["url"]
-    local_name = file_info.get("local_name") or f"{file_id}.pdf"
-    local_path = FILES_DIR / local_name
-
-    detail_url = (
-        f"{VIEW_URL}?pageIndex=1&seq_id={seq_id}"
-        f"&bub_cd=&searchWord=&searchOption="
-    )
-
-    try:
-        await page.goto(detail_url, wait_until="domcontentloaded", timeout=60000)
-        await page.wait_for_timeout(2000)
-        fn_exists = await page.evaluate("typeof download === 'function'")
-        if fn_exists:
-            async with page.expect_download(timeout=90_000) as dl_info:
-                await page.evaluate(f"download('{file_id}', '{file_name}')")
-            dl  = await dl_info.value
-            tmp = Path(await dl.path())
-            if tmp and tmp.exists():
-                shutil.move(str(tmp), str(local_path))
-                if not is_broken_file(local_path):
-                    size_kb = local_path.stat().st_size // 1024
-                    print(f"    [완료] {local_name} ({size_kb} KB)")
-                    return local_name
-                local_path.unlink(missing_ok=True)
-    except PWTimeout:
-        print(f"    [타임아웃] download() 방식")
-    except Exception as e:
-        print(f"    [오류] download(): {e}")
-
-    try:
-        async with page.expect_download(timeout=60_000) as dl_info:
-            await page.goto(file_url, wait_until="domcontentloaded", timeout=60000)
-        dl  = await dl_info.value
-        tmp = Path(await dl.path())
-        if tmp and tmp.exists():
-            shutil.move(str(tmp), str(local_path))
-            if not is_broken_file(local_path):
-                size_kb = local_path.stat().st_size // 1024
-                print(f"    [완료/직접] {local_name} ({size_kb} KB)")
-                return local_name
-            local_path.unlink(missing_ok=True)
-    except PWTimeout:
-        print(f"    [타임아웃] 직접 URL")
-    except Exception as e:
-        print(f"    [오류] 직접 URL: {e}")
-
-    return ""
-
-async def download_file_with_retry(page: Page, seq_id: str, file_info: dict) -> str:
-    for i in range(1, 4):
-        print(f"    시도 {i}/3 (1차)")
-        result = await try_download_once(page, seq_id, file_info)
-        if result:
-            return result
-        if i < 3:
-            await asyncio.sleep(DELAY_FILE)
-
-    print(f"    → 1차 실패. {int(DELAY_RETRY_PAUSE)}초 대기 후 2차...")
-    await asyncio.sleep(DELAY_RETRY_PAUSE)
-
-    for i in range(1, 4):
-        print(f"    시도 {i}/3 (2차)")
-        result = await try_download_once(page, seq_id, file_info)
-        if result:
-            return result
-        if i < 3:
-            await asyncio.sleep(DELAY_FILE)
-
-    print(f"    → 최종 실패 → FAILED")
-    return "FAILED"
 
 # ── 데이터 저장/로드
 def load_existing() -> dict[str, dict]:
@@ -424,7 +432,7 @@ def save_notices(notices: list[dict]):
 # ── 메인
 async def main():
     print("=" * 60)
-    print("대법원 파산·회생 자산매각 공고 스크래퍼 v8")
+    print("대법원 파산·회생 자산매각 공고 스크래퍼 v9")
     print(f"실행 시각: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("=" * 60)
 
@@ -461,10 +469,10 @@ async def main():
 
     save_notices(final)
 
-    # ★ monthly_stats.json 저장
     print(f"\n[5.5단계] 월별 통계 저장")
     save_monthly_stats(final)
 
+    # 다운로드 필요 목록
     need_download = [
         n for n in final
         if any(
@@ -473,57 +481,36 @@ async def main():
         )
     ]
 
-    print(f"\n[6단계] 파일 다운로드 (Playwright)")
+    print(f"\n[6단계] 파일 다운로드 (requests + 프록시)")
     print(f"  → 다운로드 필요: {len(need_download)}건")
 
     file_ok   = 0
     file_fail = 0
 
-    if need_download:
-        async with async_playwright() as pw:
-            browser = await pw.chromium.launch(headless=True, args=BROWSER_ARGS)
-            context = await browser.new_context(
-                locale="ko-KR",
-                timezone_id="Asia/Seoul",
-                user_agent=USER_AGENT,
-                accept_downloads=True,
-                extra_http_headers={
-                    "Accept-Language": "ko-KR,ko;q=0.9",
-                    "Referer": BASE_URL,
-                },
-            )
-            await context.add_init_script(
-                "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
-            )
-            page = await context.new_page()
+    for ni, n in enumerate(need_download, 1):
+        print(f"\n  [{ni}/{len(need_download)}] {n['title'][:45]}")
+        for fi in n.get("files", []):
+            if not fi.get("id"):
+                continue
+            if local_file_ok(fi.get("local", "")):
+                print(f"    [스킵] {fi['local']}")
+                continue
+            result = download_file_with_retry(fi)
+            fi["local"] = result
+            if result and result != "FAILED":
+                file_ok += 1
+            else:
+                file_fail += 1
+            time.sleep(DELAY_FILE)
 
-            for ni, n in enumerate(need_download, 1):
-                nid = n["id"]
-                print(f"\n  [{ni}/{len(need_download)}] {n['title'][:45]}")
-                for fi in n.get("files", []):
-                    if not fi.get("id"):
-                        continue
-                    if local_file_ok(fi.get("local", "")):
-                        print(f"    [스킵] {fi['local']}")
-                        continue
-                    result = await download_file_with_retry(page, nid, fi)
-                    fi["local"] = result
-                    if result and result != "FAILED":
-                        file_ok += 1
-                    else:
-                        file_fail += 1
-                    await asyncio.sleep(DELAY_FILE)
+        if ni % 10 == 0:
+            save_notices(final)
+            print(f"  [중간저장] {ni}건 처리")
 
-                if ni % 10 == 0:
-                    save_notices(final)
-                    print(f"  [중간저장] {ni}건 처리")
+    save_notices(final)
 
-            await browser.close()
-
-        save_notices(final)
-
-    date_ok   = sum(1 for n in final if n.get("date"))
-    date_fail = sum(1 for n in final if not n.get("date"))
+    date_ok      = sum(1 for n in final if n.get("date"))
+    date_fail    = sum(1 for n in final if not n.get("date"))
     failed_total = sum(
         1 for n in final
         for fi in n.get("files", [])
@@ -531,11 +518,11 @@ async def main():
     )
 
     print("\n" + "=" * 60)
-    print(f"완료!")
+    print(f"완료! (v9 - requests 다운로드)")
     print(f"  재수집 공고:        {rescrape_count}건")
     print(f"  작성일 수집 성공:   {date_ok}건")
     print(f"  작성일 수집 실패:   {date_fail}건")
-    print(f"  파일 복원:          {len(files_index)}개")
+    print(f"  파일 복원:          {len(files_index) // 2}개")
     print(f"  파일 신규 성공:     {file_ok}개")
     print(f"  파일 실패(FAILED):  {file_fail}개")
     print(f"  전체 FAILED 누적:   {failed_total}개")
