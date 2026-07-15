@@ -25,12 +25,24 @@ jobs:
           python-version: '3.11'
 
       - name: Python 패키지 설치
-        run: pip install playwright requests beautifulsoup4
+        run: pip install requests beautifulsoup4
 
-      - name: Playwright 브라우저 설치
+      - name: 중복 확장자 파일명 정리 (.pdf.pdf → .pdf 등)
         run: |
-          playwright install chromium
-          playwright install-deps chromium
+          cd docs/files
+          for f in *.pdf.pdf; do
+            [ -f "$f" ] && mv "$f" "${f%.pdf.pdf}.pdf" && echo "수정: $f → ${f%.pdf.pdf}.pdf"
+          done
+          for f in *.hwp.hwp; do
+            [ -f "$f" ] && mv "$f" "${f%.hwp.hwp}.hwp" && echo "수정: $f → ${f%.hwp.hwp}.hwp"
+          done
+          for f in *.docx.docx; do
+            [ -f "$f" ] && mv "$f" "${f%.docx.docx}.docx" && echo "수정: $f → ${f%.docx.docx}.docx"
+          done
+          for f in *.xlsx.xlsx; do
+            [ -f "$f" ] && mv "$f" "${f%.xlsx.xlsx}.xlsx" && echo "수정: $f → ${f%.xlsx.xlsx}.xlsx"
+          done
+          echo "파일명 정리 완료"
 
       - name: 스크래핑 실행
         run: python scraper/scrape.py
@@ -40,7 +52,7 @@ jobs:
       - name: 변경사항 확인
         id: check_changes
         run: |
-          git add data/notices.json docs/files/
+          git add data/notices.json data/monthly_stats.json docs/files/
           if git diff --staged --quiet; then
             echo "changed=false" >> $GITHUB_OUTPUT
           else
