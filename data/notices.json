@@ -1,7 +1,711 @@
 {
-  "updated": "2026-07-28 17:20:00",
+  "updated": "2026-07-30 22:09:25",
   "count": 480,
   "notices": [
+    {
+      "id": "34700",
+      "seq_id": "34700",
+      "court": "인천지방법원",
+      "org": "채무자 지우드 주식회사의 파산관재인 문지혜",
+      "title": "자산(비품/자동차/재고(목재)) 매각공고",
+      "date": "2026.07.30",
+      "files": [
+        {
+          "id": "1785407255448_192735.pdf",
+          "name": "인천지방법원 2026하합36 공고.pdf",
+          "url": "https://file.scourt.go.kr/AttachDownload",
+          "ext": "pdf",
+          "local": "1785407255448_192735.pdf",
+          "local_name": "1785407255448_192735.pdf",
+          "path": "011"
+        }
+      ],
+      "end_date": "2026.08.12",
+      "phone": "032-873-6002",
+      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34700&bub_cd=&searchWord=&searchOption="
+    },
+    {
+      "id": "34698",
+      "seq_id": "34698",
+      "court": "서울회생법원",
+      "org": "채무자 주식회사 동성산업의 파산관재인 임종엽",
+      "title": "파산재단 자산매각 공고",
+      "date": "2026.07.30",
+      "files": [
+        {
+          "id": "1785397742018_164902.pdf",
+          "name": "2026하합1533호-자산(차량운반구) 재매각 공고문(동성산업).pdf",
+          "url": "https://file.scourt.go.kr/AttachDownload",
+          "ext": "pdf",
+          "local": "1785397742018_164902.pdf",
+          "local_name": "1785397742018_164902.pdf",
+          "path": "011"
+        }
+      ],
+      "end_date": "2026.09.03",
+      "phone": "070-7781-0220",
+      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34698&bub_cd=&searchWord=&searchOption="
+    },
+    {
+      "id": "34697",
+      "seq_id": "34697",
+      "court": "서울회생법원",
+      "org": "채무자 정문혜의 파산관재인 김유봉",
+      "title": "부동산 매각 공고",
+      "date": "2026.07.30",
+      "files": [
+        {
+          "id": "1785397058143_163738.pdf",
+          "name": "부동산 매각공고(2023하단104111 채무자 정문혜).pdf",
+          "url": "https://file.scourt.go.kr/AttachDownload",
+          "ext": "pdf",
+          "local": "1785397058143_163738.pdf",
+          "local_name": "1785397058143_163738.pdf",
+          "path": "011"
+        }
+      ],
+      "end_date": "2026.09.01",
+      "phone": "0264850039",
+      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34697&bub_cd=&searchWord=&searchOption="
+    },
+    {
+      "id": "34696",
+      "seq_id": "34696",
+      "court": "서울회생법원",
+      "org": "채무자 김혁의 파산관재인 김유봉",
+      "title": "부동산 매각 공고",
+      "date": "2026.07.30",
+      "files": [
+        {
+          "id": "1785396826509_163346.pdf",
+          "name": "부동산 매각공고(2024하단102325 채무자 김혁).pdf",
+          "url": "https://file.scourt.go.kr/AttachDownload",
+          "ext": "pdf",
+          "local": "1785396826509_163346.pdf",
+          "local_name": "1785396826509_163346.pdf",
+          "path": "011"
+        }
+      ],
+      "end_date": "2026.09.02",
+      "phone": "0264850039",
+      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34696&bub_cd=&searchWord=&searchOption="
+    },
+    {
+      "id": "34695",
+      "seq_id": "34695",
+      "court": "서울회생법원",
+      "org": "채무자 오길아의 파산관재인 김유봉",
+      "title": "부동산 매각 공고",
+      "date": "2026.07.30",
+      "files": [
+        {
+          "id": "1785396573575_162933.pdf",
+          "name": "부동산 매각공고(2024하단105324 채무자 오길아).pdf",
+          "url": "https://file.scourt.go.kr/AttachDownload",
+          "ext": "pdf",
+          "local": "1785396573575_162933.pdf",
+          "local_name": "1785396573575_162933.pdf",
+          "path": "011"
+        }
+      ],
+      "end_date": "2026.09.01",
+      "phone": "02-6485-0039",
+      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34695&bub_cd=&searchWord=&searchOption="
+    },
+    {
+      "id": "34694",
+      "seq_id": "34694",
+      "court": "서울회생법원",
+      "org": "채무자 주식회사 더블류코코로의 파산관재인 임종엽",
+      "title": "자산 포기 안내서",
+      "date": "2026.07.30",
+      "files": [
+        {
+          "id": "1785396516469_162836.pdf",
+          "name": "2025하합744-자산포기안내서(더블류코코로).pdf",
+          "url": "https://file.scourt.go.kr/AttachDownload",
+          "ext": "pdf",
+          "local": "1785396516469_162836.pdf",
+          "local_name": "1785396516469_162836.pdf",
+          "path": "011"
+        }
+      ],
+      "end_date": "2026.08.24",
+      "phone": "070-7781-0220",
+      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34694&bub_cd=&searchWord=&searchOption="
+    },
+    {
+      "id": "34693",
+      "seq_id": "34693",
+      "court": "서울회생법원",
+      "org": "채무자 인우공영 주식회사의 파산관재인 임종엽",
+      "title": "파산재단 자산(판결금) 매각 공고",
+      "date": "2026.07.30",
+      "files": [
+        {
+          "id": "1785396468640_162748.pdf",
+          "name": "2024하합100592-자산 매각 공고문(인우공영).pdf",
+          "url": "https://file.scourt.go.kr/AttachDownload",
+          "ext": "pdf",
+          "local": "1785396468640_162748.pdf",
+          "local_name": "1785396468640_162748.pdf",
+          "path": "011"
+        }
+      ],
+      "end_date": "2026.08.24",
+      "phone": "070-7781-0220",
+      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34693&bub_cd=&searchWord=&searchOption="
+    },
+    {
+      "id": "34692",
+      "seq_id": "34692",
+      "court": "수원회생법원",
+      "org": "채무자 이상만의 파산관재인 변호사 황웅제",
+      "title": "부동산 매각공고",
+      "date": "2026.07.30",
+      "files": [
+        {
+          "id": "1785388713834_141833.pdf",
+          "name": "수원회생법원 2026하단64 허가서(부동산 매각에 관한 공고허가 신청산).pdf",
+          "url": "https://file.scourt.go.kr/AttachDownload",
+          "ext": "pdf",
+          "local": "1785388713834_141833.pdf",
+          "local_name": "1785388713834_141833.pdf",
+          "path": "011"
+        }
+      ],
+      "end_date": "2026.09.02",
+      "phone": "031-388-0797",
+      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34692&bub_cd=&searchWord=&searchOption="
+    },
+    {
+      "id": "34691",
+      "seq_id": "34691",
+      "court": "전주지방법원",
+      "org": "채무자 피상속인 망 정상옥의 상속재산 파산관재인 김도현",
+      "title": "부동산 매각공고(전주지법 2026하단1802)",
+      "date": "2026.07.30",
+      "files": [
+        {
+          "id": "1785375865548_104425.pdf",
+          "name": "전주지방법원 2026하단1802 부동산매각에관한공고게재신청서.pdf",
+          "url": "https://file.scourt.go.kr/AttachDownload",
+          "ext": "pdf",
+          "local": "1785375865548_104425.pdf",
+          "local_name": "1785375865548_104425.pdf",
+          "path": "011"
+        }
+      ],
+      "end_date": "2026.08.19",
+      "phone": "0632518667",
+      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34691&bub_cd=&searchWord=&searchOption="
+    },
+    {
+      "id": "34690",
+      "seq_id": "34690",
+      "court": "수원회생법원",
+      "org": "채무자 백수현의 파산관재인 변호사 배상운",
+      "title": "채각매각 및 환가포기 공고",
+      "date": "2026.07.30",
+      "files": [
+        {
+          "id": "1785375082728_103122.pdf",
+          "name": "수원회생법원 2026하단10046 파산재단(채권) 매각에 관한 공고게재신청.pdf",
+          "url": "https://file.scourt.go.kr/AttachDownload",
+          "ext": "pdf",
+          "local": "1785375082728_103122.pdf",
+          "local_name": "1785375082728_103122.pdf",
+          "path": "011"
+        }
+      ],
+      "end_date": "2026.08.27",
+      "phone": "031-214-2003",
+      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34690&bub_cd=&searchWord=&searchOption="
+    },
+    {
+      "id": "34689",
+      "seq_id": "34689",
+      "court": "수원회생법원",
+      "org": "채무자 망 지영철의 상속재산의 파산관재인 변호사 박지훈",
+      "title": "부동산 매각공고",
+      "date": "2026.07.30",
+      "files": [
+        {
+          "id": "1785374756039_102556.pdf",
+          "name": "수원회생법원 2025하단15582 매각공고.pdf",
+          "url": "https://file.scourt.go.kr/AttachDownload",
+          "ext": "pdf",
+          "local": "1785374756039_102556.pdf",
+          "local_name": "1785374756039_102556.pdf",
+          "path": "011"
+        }
+      ],
+      "end_date": "2026.09.23",
+      "phone": "031-217-8831",
+      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34689&bub_cd=&searchWord=&searchOption="
+    },
+    {
+      "id": "34688",
+      "seq_id": "34688",
+      "court": "수원회생법원",
+      "org": "채무자 김명순의 파산관재인 민경태",
+      "title": "부동산 매각공고",
+      "date": "2026.07.29",
+      "files": [
+        {
+          "id": "1785312200166_170320.pdf",
+          "name": "수원회생법원 2026하단11703 부동산 매각공고안(김명순20250724).pdf",
+          "url": "https://file.scourt.go.kr/AttachDownload",
+          "ext": "pdf",
+          "local": "1785312200166_170320.pdf",
+          "local_name": "1785312200166_170320.pdf",
+          "path": "011"
+        }
+      ],
+      "end_date": "2026.08.20",
+      "phone": "031-656-8971",
+      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34688&bub_cd=&searchWord=&searchOption="
+    },
+    {
+      "id": "34687",
+      "seq_id": "34687",
+      "court": "수원회생법원",
+      "org": "채무자 이한아의 파산관재인 민경태",
+      "title": "부동산 매각공고",
+      "date": "2026.07.29",
+      "files": [
+        {
+          "id": "1785312145737_170225.pdf",
+          "name": "수원회생법원 2025하단14938 부동산 매각공고안(이한아20250724).pdf",
+          "url": "https://file.scourt.go.kr/AttachDownload",
+          "ext": "pdf",
+          "local": "1785312145737_170225.pdf",
+          "local_name": "1785312145737_170225.pdf",
+          "path": "011"
+        }
+      ],
+      "end_date": "2026.08.20",
+      "phone": "031-656-8971",
+      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34687&bub_cd=&searchWord=&searchOption="
+    },
+    {
+      "id": "34686",
+      "seq_id": "34686",
+      "court": "창원지방법원",
+      "org": "채무자 이재우의 파산관재인 변호사 조현태",
+      "title": "부동산 매각공고",
+      "date": "2026.07.29",
+      "files": [
+        {
+          "id": "1785302928520_142848.pdf",
+          "name": "창원지방법원 2025하단11020 부동산 매각공고문(이재우).pdf",
+          "url": "https://file.scourt.go.kr/AttachDownload",
+          "ext": "pdf",
+          "local": "1785302928520_142848.pdf",
+          "local_name": "1785302928520_142848.pdf",
+          "path": "011"
+        }
+      ],
+      "end_date": "2026.08.25",
+      "phone": "055-262-5552",
+      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34686&bub_cd=&searchWord=&searchOption="
+    },
+    {
+      "id": "34685",
+      "seq_id": "34685",
+      "court": "창원지방법원",
+      "org": "채무자 이순자의 파산관재인 변호사 김성훈",
+      "title": "부동산 매각공고",
+      "date": "2026.07.29",
+      "files": [
+        {
+          "id": "1785302117633_141517.pdf",
+          "name": "창원지방법원 2024하단10593 부동산 매각공고.pdf",
+          "url": "https://file.scourt.go.kr/AttachDownload",
+          "ext": "pdf",
+          "local": "1785302117633_141517.pdf",
+          "local_name": "1785302117633_141517.pdf",
+          "path": "011"
+        }
+      ],
+      "end_date": "2026.09.28",
+      "phone": "055-283-2728",
+      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34685&bub_cd=&searchWord=&searchOption="
+    },
+    {
+      "id": "34684",
+      "seq_id": "34684",
+      "court": "수원회생법원",
+      "org": "채무자 박정남의 파산관재인 변호사 박승범",
+      "title": "부동산매각공고",
+      "date": "2026.07.29",
+      "files": [
+        {
+          "id": "1785302043918_141403.pdf",
+          "name": "수원회생법원 2026하단11494 회생파산각종허가서.pdf",
+          "url": "https://file.scourt.go.kr/AttachDownload",
+          "ext": "pdf",
+          "local": "1785302043918_141403.pdf",
+          "local_name": "1785302043918_141403.pdf",
+          "path": "011"
+        }
+      ],
+      "end_date": "2026.08.21",
+      "phone": "031-405-2910",
+      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34684&bub_cd=&searchWord=&searchOption="
+    },
+    {
+      "id": "34683",
+      "seq_id": "34683",
+      "court": "수원회생법원",
+      "org": "채무자 이효진의 파산관재인 변호사 박승범",
+      "title": "자산매각공고",
+      "date": "2026.07.29",
+      "files": [
+        {
+          "id": "1785301989751_141309.pdf",
+          "name": "수원회생법원 2025하단1180 회생파산각종허가서.pdf",
+          "url": "https://file.scourt.go.kr/AttachDownload",
+          "ext": "pdf",
+          "local": "1785301989751_141309.pdf",
+          "local_name": "1785301989751_141309.pdf",
+          "path": "011"
+        }
+      ],
+      "end_date": "2026.08.28",
+      "phone": "031-405-2910",
+      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34683&bub_cd=&searchWord=&searchOption="
+    },
+    {
+      "id": "34682",
+      "seq_id": "34682",
+      "court": "서울회생법원",
+      "org": "채무자 주식회사 다음앤큐큐 파산관재인 변호사 윤문희",
+      "title": "유형자산(비품) 일괄 매각공고",
+      "date": "2026.07.29",
+      "files": [
+        {
+          "id": "1785294950456_121550.pdf",
+          "name": ".유형자산(비품) 매각공고문_2026하합1343 (주)다음앤큐큐.pdf",
+          "url": "https://file.scourt.go.kr/AttachDownload",
+          "ext": "pdf",
+          "local": "1785294950456_121550.pdf",
+          "local_name": "1785294950456_121550.pdf",
+          "path": "011"
+        }
+      ],
+      "end_date": "2026.09.11",
+      "phone": "02-786-8614",
+      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34682&bub_cd=&searchWord=&searchOption="
+    },
+    {
+      "id": "34681",
+      "seq_id": "34681",
+      "court": "서울회생법원",
+      "org": "채무자 주식회사 어메이징브루잉컴퍼니 파산관재인 이명헌",
+      "title": "자산(주식) 매각 공고",
+      "date": "2026.07.29",
+      "files": [
+        {
+          "id": "1785294894107_121454.pdf",
+          "name": "26하합1264 채무자 (주)어메이징브루잉컴퍼니-260728-자산(주식) 매각공고문.pdf.pdf",
+          "url": "https://file.scourt.go.kr/AttachDownload",
+          "ext": "pdf",
+          "local": "1785294894107_121454.pdf",
+          "local_name": "1785294894107_121454.pdf",
+          "path": "011"
+        }
+      ],
+      "end_date": "2026.08.24",
+      "phone": "02-591-8601",
+      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34681&bub_cd=&searchWord=&searchOption="
+    },
+    {
+      "id": "34680",
+      "seq_id": "34680",
+      "court": "서울회생법원",
+      "org": "채무자 주식회사  퀸레이블 파산관재인 김병철",
+      "title": "자산 매각 공고",
+      "date": "2026.07.29",
+      "files": [
+        {
+          "id": "1785294857718_121417.pdf",
+          "name": "2026하합1515 재고자산(건강기능식품) 일괄매각공고.pdf",
+          "url": "https://file.scourt.go.kr/AttachDownload",
+          "ext": "pdf",
+          "local": "1785294857718_121417.pdf",
+          "local_name": "1785294857718_121417.pdf",
+          "path": "011"
+        }
+      ],
+      "end_date": "2026.09.01",
+      "phone": "02-3477-0006",
+      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34680&bub_cd=&searchWord=&searchOption="
+    },
+    {
+      "id": "34679",
+      "seq_id": "34679",
+      "court": "서울회생법원",
+      "org": "채무자 씨앤에이치 주식회사 파산관재인 김병철",
+      "title": "자산(중역용 의자 등) 매각 공고",
+      "date": "2026.07.29",
+      "files": [
+        {
+          "id": "1785294819639_121339.pdf",
+          "name": "4. 2026하합1127 유형자산(중역용 의자 등 23점) 일괄매각공고.pdf",
+          "url": "https://file.scourt.go.kr/AttachDownload",
+          "ext": "pdf",
+          "local": "1785294819639_121339.pdf",
+          "local_name": "1785294819639_121339.pdf",
+          "path": "011"
+        }
+      ],
+      "end_date": "2026.08.25",
+      "phone": "0234770006",
+      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34679&bub_cd=&searchWord=&searchOption="
+    },
+    {
+      "id": "34678",
+      "seq_id": "34678",
+      "court": "서울회생법원",
+      "org": "채무자 씨앤에이치 주식회사 파산관재인 김병철",
+      "title": "자산(책장, 서랍장 등 가구) 매각 공고",
+      "date": "2026.07.29",
+      "files": [
+        {
+          "id": "1785294798585_121318.pdf",
+          "name": "3. 2026하합1127 유형자산(책장, 서랍장 등 가구 23점) 일괄매각공고.pdf",
+          "url": "https://file.scourt.go.kr/AttachDownload",
+          "ext": "pdf",
+          "local": "1785294798585_121318.pdf",
+          "local_name": "1785294798585_121318.pdf",
+          "path": "011"
+        }
+      ],
+      "end_date": "2026.08.25",
+      "phone": "0234770006",
+      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34678&bub_cd=&searchWord=&searchOption="
+    },
+    {
+      "id": "34677",
+      "seq_id": "34677",
+      "court": "서울회생법원",
+      "org": "채무자 씨앤에이치 주식회사 파산관재인 김병철",
+      "title": "자산(전기식기건조기 등) 매각 공고",
+      "date": "2026.07.29",
+      "files": [
+        {
+          "id": "1785294771593_121251.pdf",
+          "name": "2. 2026하합1127 유형자산(전기식기건조기 등 가전제품 10점) 일괄매각공고.pdf",
+          "url": "https://file.scourt.go.kr/AttachDownload",
+          "ext": "pdf",
+          "local": "1785294771593_121251.pdf",
+          "local_name": "1785294771593_121251.pdf",
+          "path": "011"
+        }
+      ],
+      "end_date": "2026.08.25",
+      "phone": "0234770006",
+      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34677&bub_cd=&searchWord=&searchOption="
+    },
+    {
+      "id": "34676",
+      "seq_id": "34676",
+      "court": "서울회생법원",
+      "org": "채무자 씨앤에이치 주식회사 파산관재인 김병철",
+      "title": "자산(범일금고) 매각 공고",
+      "date": "2026.07.29",
+      "files": [
+        {
+          "id": "1785294746579_121226.pdf",
+          "name": "1. 2026하합1127 유형자산(범일금고 1점) 매각공고.pdf",
+          "url": "https://file.scourt.go.kr/AttachDownload",
+          "ext": "pdf",
+          "local": "1785294746579_121226.pdf",
+          "local_name": "1785294746579_121226.pdf",
+          "path": "011"
+        }
+      ],
+      "end_date": "2026.08.25",
+      "phone": "02-3477-0006",
+      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34676&bub_cd=&searchWord=&searchOption="
+    },
+    {
+      "id": "34675",
+      "seq_id": "34675",
+      "court": "서울회생법원",
+      "org": "채무자 주식회사 아이오티포헬스 파산관재인 김병철",
+      "title": "자산(특허권) 매각 공고",
+      "date": "2026.07.29",
+      "files": [
+        {
+          "id": "1785294689665_121129.pdf",
+          "name": "2026하합1388 무형자산(특허권) 일괄매각공고.pdf",
+          "url": "https://file.scourt.go.kr/AttachDownload",
+          "ext": "pdf",
+          "local": "1785294689665_121129.pdf",
+          "local_name": "1785294689665_121129.pdf",
+          "path": "011"
+        }
+      ],
+      "end_date": "2026.09.01",
+      "phone": "02-3477-0006",
+      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34675&bub_cd=&searchWord=&searchOption="
+    },
+    {
+      "id": "34674",
+      "seq_id": "34674",
+      "court": "전주지방법원",
+      "org": "채무자 망 최영철의 상속재산 파산관재인 강호석",
+      "title": "부동산 매각공고(2026하단1614)",
+      "date": "2026.07.29",
+      "files": [
+        {
+          "id": "1785292331363_113211.pdf",
+          "name": "전주지방법원 2026하단1614 라. 부동산매각공고.pdf",
+          "url": "https://file.scourt.go.kr/AttachDownload",
+          "ext": "pdf",
+          "local": "1785292331363_113211.pdf",
+          "local_name": "1785292331363_113211.pdf",
+          "path": "011"
+        }
+      ],
+      "end_date": "2026.08.13",
+      "phone": "0632552500",
+      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34674&bub_cd=&searchWord=&searchOption="
+    },
+    {
+      "id": "34673",
+      "seq_id": "34673",
+      "court": "전주지방법원",
+      "org": "채무자 망 양각용의 상속재산 파산관재인 김진미",
+      "title": "부동산 매각공고(2025하단10551)",
+      "date": "2026.07.29",
+      "files": [
+        {
+          "id": "1785292092178_112812.pdf",
+          "name": "전주지방법원 2025하단10551 부동산 매각공고문.pdf",
+          "url": "https://file.scourt.go.kr/AttachDownload",
+          "ext": "pdf",
+          "local": "1785292092178_112812.pdf",
+          "local_name": "1785292092178_112812.pdf",
+          "path": "011"
+        }
+      ],
+      "end_date": "2026.10.06",
+      "phone": "0632112399",
+      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34673&bub_cd=&searchWord=&searchOption="
+    },
+    {
+      "id": "34672",
+      "seq_id": "34672",
+      "court": "수원회생법원",
+      "org": "주식회사 키웍스의 파산관재인 변호사 이용윤",
+      "title": "채권 매각 공고",
+      "date": "2026.07.29",
+      "files": [
+        {
+          "id": "1785291051234_111051.pdf",
+          "name": "2025하합471 (주)키웍스 채권매각공고(채무확인서 등 첨부).pdf",
+          "url": "https://file.scourt.go.kr/AttachDownload",
+          "ext": "pdf",
+          "local": "1785291051234_111051.pdf",
+          "local_name": "1785291051234_111051.pdf",
+          "path": "011"
+        }
+      ],
+      "end_date": "2026.09.01",
+      "phone": "031-205-5080",
+      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34672&bub_cd=&searchWord=&searchOption="
+    },
+    {
+      "id": "34671",
+      "seq_id": "34671",
+      "court": "수원회생법원",
+      "org": "주식회사 유한산업의 파산관재인 변호사 이용윤",
+      "title": "유체동산 매각 공고",
+      "date": "2026.07.29",
+      "files": [
+        {
+          "id": "1785290987382_110947.pdf",
+          "name": "2026하합315 (주)유한산업 유체동산  매각공고.pdf",
+          "url": "https://file.scourt.go.kr/AttachDownload",
+          "ext": "pdf",
+          "local": "1785290987382_110947.pdf",
+          "local_name": "1785290987382_110947.pdf",
+          "path": "011"
+        }
+      ],
+      "end_date": "2026.08.13",
+      "phone": "010-8980-6632",
+      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34671&bub_cd=&searchWord=&searchOption="
+    },
+    {
+      "id": "34670",
+      "seq_id": "34670",
+      "court": "수원회생법원",
+      "org": "현대위아머신 주식회사의 파산관재인 변호사 이용윤",
+      "title": "채권 매각 공고",
+      "date": "2026.07.29",
+      "files": [
+        {
+          "id": "1785290924611_110844.pdf",
+          "name": "2024하합470호  현대위아머신(주) 채권매각공고.pdf",
+          "url": "https://file.scourt.go.kr/AttachDownload",
+          "ext": "pdf",
+          "local": "1785290924611_110844.pdf",
+          "local_name": "1785290924611_110844.pdf",
+          "path": "011"
+        }
+      ],
+      "end_date": "2026.08.14",
+      "phone": "031-205-5080",
+      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34670&bub_cd=&searchWord=&searchOption="
+    },
+    {
+      "id": "34669",
+      "seq_id": "34669",
+      "court": "인천지방법원",
+      "org": "채무자 황가을의 파산관재인 김종화",
+      "title": "위자료 판결금 채권매각공고 및 환가포기 공고",
+      "date": "2026.07.29",
+      "files": [
+        {
+          "id": "1785290191570_105631.pdf",
+          "name": "인천지방법원 2026하단101017 위자료 판결금 채권 매각 공고 등 신청.pdf",
+          "url": "https://file.scourt.go.kr/AttachDownload",
+          "ext": "pdf",
+          "local": "1785290191570_105631.pdf",
+          "local_name": "1785290191570_105631.pdf",
+          "path": "011"
+        }
+      ],
+      "end_date": "2026.08.18",
+      "phone": "0324255665",
+      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34669&bub_cd=&searchWord=&searchOption="
+    },
+    {
+      "id": "34668",
+      "seq_id": "34668",
+      "court": "광주회생법원",
+      "org": "채무자 망 김성희의 상속재산 파산관재인 서종표",
+      "title": "부동산매각공고",
+      "date": "2026.07.29",
+      "files": [
+        {
+          "id": "1785286888891_100128.pdf",
+          "name": "26하단3부동산매각공고.pdf",
+          "url": "https://file.scourt.go.kr/AttachDownload",
+          "ext": "pdf",
+          "local": "1785286888891_100128.pdf",
+          "local_name": "1785286888891_100128.pdf",
+          "path": "011"
+        }
+      ],
+      "end_date": "2026.08.24",
+      "phone": "062-233-0039",
+      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34668&bub_cd=&searchWord=&searchOption="
+    },
     {
       "id": "34667",
       "seq_id": "34667",
@@ -3875,28 +4579,6 @@
       "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34486&bub_cd=&searchWord=&searchOption="
     },
     {
-      "id": "34485",
-      "seq_id": "34485",
-      "court": "서울회생법원",
-      "org": "채무자 진스토리코리아 주식회사 파산관재인 이명헌",
-      "title": "자산 매각 공고",
-      "date": "2026.07.15",
-      "files": [
-        {
-          "id": "1784077508845_100508.pdf",
-          "name": "26하합1223 채무자 진스토리코리아(주)-260714-자산매각공고문(특허권).pdf",
-          "url": "https://file.scourt.go.kr/AttachDownload",
-          "ext": "pdf",
-          "local": "1784077508845_100508.pdf",
-          "local_name": "1784077508845_100508.pdf",
-          "path": "011"
-        }
-      ],
-      "end_date": "2026.07.29",
-      "phone": "02-591-8601",
-      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34485&bub_cd=&searchWord=&searchOption="
-    },
-    {
       "id": "34484",
       "seq_id": "34484",
       "court": "전주지방법원",
@@ -4115,28 +4797,6 @@
       "end_date": "2026.09.10",
       "phone": "0517107014",
       "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34473&bub_cd=&searchWord=&searchOption="
-    },
-    {
-      "id": "34472",
-      "seq_id": "34472",
-      "court": "수원회생법원",
-      "org": "채무자 주식회사 에스엠시스템즈의 파산관재인 변호사 강신하",
-      "title": "자산(채권) 포기 공고",
-      "date": "2026.07.14",
-      "files": [
-        {
-          "id": "1784007641790_144041.pdf",
-          "name": "포기안내서(채권)-에스엠스시템즈.pdf",
-          "url": "https://file.scourt.go.kr/AttachDownload",
-          "ext": "pdf",
-          "local": "1784007641790_144041.pdf",
-          "local_name": "1784007641790_144041.pdf",
-          "path": "011"
-        }
-      ],
-      "end_date": "2026.07.30",
-      "phone": "031-506-3322",
-      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34472&bub_cd=&searchWord=&searchOption="
     },
     {
       "id": "34471",
@@ -4403,28 +5063,6 @@
       "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34460&bub_cd=&searchWord=&searchOption="
     },
     {
-      "id": "34458",
-      "seq_id": "34458",
-      "court": "광주회생법원",
-      "org": "채무자 강진옥의 파산관재인 변호사 김지현",
-      "title": "부동산매각공고",
-      "date": "2026.07.14",
-      "files": [
-        {
-          "id": "1783983917981_080517.pdf",
-          "name": "부동산매각공고문(24하단6056 강진옥).pdf",
-          "url": "https://file.scourt.go.kr/AttachDownload",
-          "ext": "pdf",
-          "local": "1783983917981_080517.pdf",
-          "local_name": "1783983917981_080517.pdf",
-          "path": "011"
-        }
-      ],
-      "end_date": "2026.07.29",
-      "phone": "062-224-6688",
-      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34458&bub_cd=&searchWord=&searchOption="
-    },
-    {
       "id": "34456",
       "seq_id": "34456",
       "court": "의정부지방법원",
@@ -4601,28 +5239,6 @@
       "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34448&bub_cd=&searchWord=&searchOption="
     },
     {
-      "id": "34447",
-      "seq_id": "34447",
-      "court": "인천지방법원",
-      "org": "채무자 김태훈의 파산관재인 민경식",
-      "title": "부동산매각공고",
-      "date": "2026.07.13",
-      "files": [
-        {
-          "id": "1783915780154_130940.pdf",
-          "name": "인천지방법원 2024하단101365 부동산매각공고게재허가신청-메종드로제905.pdf",
-          "url": "https://file.scourt.go.kr/AttachDownload",
-          "ext": "pdf",
-          "local": "1783915780154_130940.pdf",
-          "local_name": "1783915780154_130940.pdf",
-          "path": "011"
-        }
-      ],
-      "end_date": "2026.07.30",
-      "phone": "0328653030",
-      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34447&bub_cd=&searchWord=&searchOption="
-    },
-    {
       "id": "34445",
       "seq_id": "34445",
       "court": "서울회생법원",
@@ -4733,28 +5349,6 @@
       "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34441&bub_cd=&searchWord=&searchOption="
     },
     {
-      "id": "34440",
-      "seq_id": "34440",
-      "court": "의정부지방법원",
-      "org": "채무자 재환건설(주)의 파산관재인 변호사 신재민",
-      "title": "자산 환가 포기 공고",
-      "date": "2026.07.10",
-      "files": [
-        {
-          "id": "1783670815405_170655.pdf",
-          "name": "의정부지방법원 2026하합1008 자산 환가 포기 공고문.pdf",
-          "url": "https://file.scourt.go.kr/AttachDownload",
-          "ext": "pdf",
-          "local": "1783670815405_170655.pdf",
-          "local_name": "1783670815405_170655.pdf",
-          "path": "011"
-        }
-      ],
-      "end_date": "2026.07.29",
-      "phone": "0315565858",
-      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34440&bub_cd=&searchWord=&searchOption="
-    },
-    {
       "id": "34437",
       "seq_id": "34437",
       "court": "서울회생법원",
@@ -4863,50 +5457,6 @@
       "end_date": "2026.07.31",
       "phone": "055-261-5110",
       "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34433&bub_cd=&searchWord=&searchOption="
-    },
-    {
-      "id": "34432",
-      "seq_id": "34432",
-      "court": "창원지방법원",
-      "org": "채무자 배영효의 파산관재인 변호사 이수경",
-      "title": "부동산 매각공고",
-      "date": "2026.07.10",
-      "files": [
-        {
-          "id": "1783659235248_135355.pdf",
-          "name": "창원지방법원 2025하단10218 부동산 매각공고 및 입찰서.pdf",
-          "url": "https://file.scourt.go.kr/AttachDownload",
-          "ext": "pdf",
-          "local": "1783659235248_135355.pdf",
-          "local_name": "1783659235248_135355.pdf",
-          "path": "011"
-        }
-      ],
-      "end_date": "2026.07.29",
-      "phone": "055-261-5110",
-      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34432&bub_cd=&searchWord=&searchOption="
-    },
-    {
-      "id": "34431",
-      "seq_id": "34431",
-      "court": "창원지방법원",
-      "org": "채무자 노태성의 파산관재인 변호사 이수경",
-      "title": "부동산 매각공고",
-      "date": "2026.07.10",
-      "files": [
-        {
-          "id": "1783659157393_135237.pdf",
-          "name": "창원지방법원 2025하단158 부동산 매각공고 및 입찰서.pdf",
-          "url": "https://file.scourt.go.kr/AttachDownload",
-          "ext": "pdf",
-          "local": "1783659157393_135237.pdf",
-          "local_name": "1783659157393_135237.pdf",
-          "path": "011"
-        }
-      ],
-      "end_date": "2026.07.29",
-      "phone": "055-261-5110",
-      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34431&bub_cd=&searchWord=&searchOption="
     },
     {
       "id": "34429",
@@ -5327,28 +5877,6 @@
       "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34408&bub_cd=&searchWord=&searchOption="
     },
     {
-      "id": "34407",
-      "seq_id": "34407",
-      "court": "대전회생법원",
-      "org": "채무자 주식회사 안산철강 파산관재인 변호사 박희경",
-      "title": "파산재단 자산 매각공고(채권)",
-      "date": "2026.07.09",
-      "files": [
-        {
-          "id": "1783929270582_165430.pdf",
-          "name": "2025하합7004 채권매각공고.pdf",
-          "url": "https://file.scourt.go.kr/AttachDownload",
-          "ext": "pdf",
-          "local": "1783929270582_165430.pdf",
-          "local_name": "1783929270582_165430.pdf",
-          "path": "011"
-        }
-      ],
-      "end_date": "2026.07.29",
-      "phone": "0424893100",
-      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34407&bub_cd=&searchWord=&searchOption="
-    },
-    {
       "id": "34406",
       "seq_id": "34406",
       "court": "의정부지방법원",
@@ -5679,28 +6207,6 @@
       "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34391&bub_cd=&searchWord=&searchOption="
     },
     {
-      "id": "34390",
-      "seq_id": "34390",
-      "court": "인천지방법원",
-      "org": "채무자 유명윤의 파산관재인 변호사 김기용",
-      "title": "부동산매각공고",
-      "date": "2026.07.09",
-      "files": [
-        {
-          "id": "1783577113211_150513.pdf",
-          "name": "인천지방법원 2024하단100926 매각공고.pdf",
-          "url": "https://file.scourt.go.kr/AttachDownload",
-          "ext": "pdf",
-          "local": "1783577113211_150513.pdf",
-          "local_name": "1783577113211_150513.pdf",
-          "path": "011"
-        }
-      ],
-      "end_date": "2026.07.30",
-      "phone": "0328612257",
-      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34390&bub_cd=&searchWord=&searchOption="
-    },
-    {
       "id": "34389",
       "seq_id": "34389",
       "court": "인천지방법원",
@@ -5721,28 +6227,6 @@
       "end_date": "2026.08.06",
       "phone": "032-232-0989,",
       "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34389&bub_cd=&searchWord=&searchOption="
-    },
-    {
-      "id": "34388",
-      "seq_id": "34388",
-      "court": "전주지방법원",
-      "org": "채무자 주식회사 이엠테크의 파산관재인 김도현",
-      "title": "특허권 매각 공고",
-      "date": "2026.07.09",
-      "files": [
-        {
-          "id": "1783574428466_142028.pdf",
-          "name": "전주지방법원 2026하합1006 특허권매각에관한공고게재신청서.pdf",
-          "url": "https://file.scourt.go.kr/AttachDownload",
-          "ext": "pdf",
-          "local": "1783574428466_142028.pdf",
-          "local_name": "1783574428466_142028.pdf",
-          "path": "011"
-        }
-      ],
-      "end_date": "2026.07.29",
-      "phone": "063-251-8667",
-      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34388&bub_cd=&searchWord=&searchOption="
     },
     {
       "id": "34387",
@@ -5789,28 +6273,6 @@
       "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34386&bub_cd=&searchWord=&searchOption="
     },
     {
-      "id": "34385",
-      "seq_id": "34385",
-      "court": "수원회생법원",
-      "org": "채무자 주식회사 이엠로지스 파산관재인 변호사 김경돈",
-      "title": "디자인권 매각 공고 및 환가포기 공고",
-      "date": "2026.07.09",
-      "files": [
-        {
-          "id": "1783573604672_140644.pdf",
-          "name": "[이엠로지스] 매각공고문(디자인권).pdf",
-          "url": "https://file.scourt.go.kr/AttachDownload",
-          "ext": "pdf",
-          "local": "1783573604672_140644.pdf",
-          "local_name": "1783573604672_140644.pdf",
-          "path": "011"
-        }
-      ],
-      "end_date": "2026.07.29",
-      "phone": "031-410-4010",
-      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34385&bub_cd=&searchWord=&searchOption="
-    },
-    {
       "id": "34384",
       "seq_id": "34384",
       "court": "수원회생법원",
@@ -5831,28 +6293,6 @@
       "end_date": "2026.08.06",
       "phone": "031-216-1330",
       "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34384&bub_cd=&searchWord=&searchOption="
-    },
-    {
-      "id": "34383",
-      "seq_id": "34383",
-      "court": "대구회생법원",
-      "org": "채무자 주식회사 시알이노테크의 파산관재인 변호사 배아영",
-      "title": "건설기계(지게차등)매각공고(25하합164)",
-      "date": "2026.07.09",
-      "files": [
-        {
-          "id": "1783573463571_140423.hwp",
-          "name": "건설기계(지게차 등) 매각공고(시알이노테크)25하합164.hwp",
-          "url": "https://file.scourt.go.kr/AttachDownload",
-          "ext": "hwp",
-          "local": "1783573463571_140423.hwp",
-          "local_name": "1783573463571_140423.hwp",
-          "path": "011"
-        }
-      ],
-      "end_date": "2026.07.29",
-      "phone": "054-291-6215",
-      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34383&bub_cd=&searchWord=&searchOption="
     },
     {
       "id": "34381",
@@ -7505,28 +7945,6 @@
       "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34283&bub_cd=&searchWord=&searchOption="
     },
     {
-      "id": "34282",
-      "seq_id": "34282",
-      "court": "의정부지방법원",
-      "org": "채무자 김미자의 파산관재인 김치련",
-      "title": "부동산매각 및 포기 공고",
-      "date": "2026.07.03",
-      "files": [
-        {
-          "id": "1783041375521_101615.pdf",
-          "name": "의정부지방법원 2025하단20866 4. 매각 및 포기공고문.pdf",
-          "url": "https://file.scourt.go.kr/AttachDownload",
-          "ext": "pdf",
-          "local": "1783041375521_101615.pdf",
-          "local_name": "1783041375521_101615.pdf",
-          "path": "011"
-        }
-      ],
-      "end_date": "2026.07.29",
-      "phone": "0315653300",
-      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34282&bub_cd=&searchWord=&searchOption="
-    },
-    {
       "id": "34280",
       "seq_id": "34280",
       "court": "서울회생법원",
@@ -7725,50 +8143,6 @@
       "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34268&bub_cd=&searchWord=&searchOption="
     },
     {
-      "id": "34265",
-      "seq_id": "34265",
-      "court": "부산회생법원",
-      "org": "채무자 서선애의 파산관재인 이무훈",
-      "title": "부동산매각공고",
-      "date": "2026.07.02",
-      "files": [
-        {
-          "id": "1782955003350_101643.pdf",
-          "name": "부산회생법원 2026하단77 법원공고를 통한 매각 및 환가포기허가신청.pdf",
-          "url": "https://file.scourt.go.kr/AttachDownload",
-          "ext": "pdf",
-          "local": "1782955003350_101643.pdf",
-          "local_name": "1782955003350_101643.pdf",
-          "path": "011"
-        }
-      ],
-      "end_date": "2026.07.30",
-      "phone": "0515044000",
-      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34265&bub_cd=&searchWord=&searchOption="
-    },
-    {
-      "id": "34263",
-      "seq_id": "34263",
-      "court": "의정부지방법원",
-      "org": "채무자 김혜순의 파산관재인 변호사 정이수",
-      "title": "자동차 매각공고",
-      "date": "2026.07.01",
-      "files": [
-        {
-          "id": "1782889215646_160015.pdf",
-          "name": "의정부지방법원 2026하단20075 자동차 매각공고, 입찰서.pdf",
-          "url": "https://file.scourt.go.kr/AttachDownload",
-          "ext": "pdf",
-          "local": "1782889215646_160015.pdf",
-          "local_name": "1782889215646_160015.pdf",
-          "path": "011"
-        }
-      ],
-      "end_date": "2026.07.29",
-      "phone": "07042428439",
-      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34263&bub_cd=&searchWord=&searchOption="
-    },
-    {
       "id": "34261",
       "seq_id": "34261",
       "court": "서울회생법원",
@@ -7811,28 +8185,6 @@
       "end_date": "2026.08.14",
       "phone": "02-587-2155",
       "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34260&bub_cd=&searchWord=&searchOption="
-    },
-    {
-      "id": "34259",
-      "seq_id": "34259",
-      "court": "서울회생법원",
-      "org": "채무자 주식회사 디센트 파산관재인 김지원",
-      "title": "자산(비품) 매각 공고",
-      "date": "2026.07.01",
-      "files": [
-        {
-          "id": "1782888255299_154415.pdf",
-          "name": "2026하합1201 (주)디센트_자산(비품) 매각 공고.pdf",
-          "url": "https://file.scourt.go.kr/AttachDownload",
-          "ext": "pdf",
-          "local": "1782888255299_154415.pdf",
-          "local_name": "1782888255299_154415.pdf",
-          "path": "011"
-        }
-      ],
-      "end_date": "2026.07.30",
-      "phone": "02-523-5567",
-      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34259&bub_cd=&searchWord=&searchOption="
     },
     {
       "id": "34257",
@@ -8429,28 +8781,6 @@
       "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34219&bub_cd=&searchWord=&searchOption="
     },
     {
-      "id": "34216",
-      "seq_id": "34216",
-      "court": "수원회생법원",
-      "org": "채무자 주식회사 폼프로의 파산관재인 이원익",
-      "title": "자산매각공고",
-      "date": "2026.06.29",
-      "files": [
-        {
-          "id": "1782720104583_170144.hwp",
-          "name": "[2026하합237 (주)폼프로] 채권매각공고안.hwp",
-          "url": "https://file.scourt.go.kr/AttachDownload",
-          "ext": "hwp",
-          "local": "1782720104583_170144.hwp",
-          "local_name": "1782720104583_170144.hwp",
-          "path": "011"
-        }
-      ],
-      "end_date": "2026.07.29",
-      "phone": "031-211-5902",
-      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34216&bub_cd=&searchWord=&searchOption="
-    },
-    {
       "id": "34213",
       "seq_id": "34213",
       "court": "전주지방법원",
@@ -8515,172 +8845,6 @@
       "end_date": "2026.08.10",
       "phone": "02-591-8601",
       "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34210&bub_cd=&searchWord=&searchOption="
-    },
-    {
-      "id": "34199",
-      "seq_id": "34199",
-      "court": "서울회생법원",
-      "org": "채무자 씨에스오 주식회사 파산관재인 이명헌",
-      "title": "자산 매각 공고",
-      "date": "2026.06.26",
-      "files": [
-        {
-          "id": "1782448427602_133347.pdf",
-          "name": "2025하합852 채무자 씨에스오(주)-260626-자산 매각 공고문(채권).pdf",
-          "url": "https://file.scourt.go.kr/AttachDownload",
-          "ext": "pdf",
-          "local": "1782448427602_133347.pdf",
-          "local_name": "1782448427602_133347.pdf",
-          "path": "011"
-        }
-      ],
-      "end_date": "2026.07.30",
-      "phone": "02-591-8601",
-      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34199&bub_cd=&searchWord=&searchOption="
-    },
-    {
-      "id": "34191",
-      "seq_id": "34191",
-      "court": "창원지방법원",
-      "org": "채무자 박석용의 파산관재인 변호사 고정항",
-      "title": "부동산 매각공고",
-      "date": "2026.06.25",
-      "files": [
-        {
-          "id": "1782374041909_165401.pdf",
-          "name": "창원지방법원 2025하단11126 부동산매각공고 및 입찰서.pdf",
-          "url": "https://file.scourt.go.kr/AttachDownload",
-          "ext": "pdf",
-          "local": "1782374041909_165401.pdf",
-          "local_name": "1782374041909_165401.pdf",
-          "path": "011"
-        }
-      ],
-      "end_date": "2026.07.30",
-      "phone": "055-274-3383",
-      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34191&bub_cd=&searchWord=&searchOption="
-    },
-    {
-      "id": "34189",
-      "seq_id": "34189",
-      "court": "춘천지방법원",
-      "org": "채무자 망 조봉기의 상속재산",
-      "title": "부동산매각공고 (2024하단1298)",
-      "date": "2026.06.25",
-      "files": [
-        {
-          "id": "1782369204853_153324.pdf",
-          "name": "춘천지방법원 2024하단1298 부동산 매각 공고.pdf",
-          "url": "https://file.scourt.go.kr/AttachDownload",
-          "ext": "pdf",
-          "local": "1782369204853_153324.pdf",
-          "local_name": "1782369204853_153324.pdf",
-          "path": "011"
-        }
-      ],
-      "end_date": "2026.07.30",
-      "phone": "0332449113",
-      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34189&bub_cd=&searchWord=&searchOption="
-    },
-    {
-      "id": "34188",
-      "seq_id": "34188",
-      "court": "춘천지방법원",
-      "org": "채무자 망 김용성의 상속재산의 파산관재인 허종영",
-      "title": "부동산매각공고 (춘천지방법원 2024하단1401)",
-      "date": "2026.06.25",
-      "files": [
-        {
-          "id": "1782369144412_153224.pdf",
-          "name": "춘천지방법원 2024하단1401 부동산 매각 공고.pdf",
-          "url": "https://file.scourt.go.kr/AttachDownload",
-          "ext": "pdf",
-          "local": "1782369144412_153224.pdf",
-          "local_name": "1782369144412_153224.pdf",
-          "path": "011"
-        }
-      ],
-      "end_date": "2026.07.30",
-      "phone": "0332449113",
-      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34188&bub_cd=&searchWord=&searchOption="
-    },
-    {
-      "id": "34187",
-      "seq_id": "34187",
-      "court": "춘천지방법원",
-      "org": "채무자 심길용의 파산관재인 허종영",
-      "title": "부동산매각공고 (춘천지방법원 2024하단1464)",
-      "date": "2026.06.25",
-      "files": [
-        {
-          "id": "1782369078378_153118.pdf",
-          "name": "춘천지방법원 2024하단1464 부동산 매각 공고.pdf",
-          "url": "https://file.scourt.go.kr/AttachDownload",
-          "ext": "pdf",
-          "local": "1782369078378_153118.pdf",
-          "local_name": "1782369078378_153118.pdf",
-          "path": "011"
-        }
-      ],
-      "end_date": "2026.07.30",
-      "phone": "0332449113",
-      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34187&bub_cd=&searchWord=&searchOption="
-    },
-    {
-      "id": "34176",
-      "seq_id": "34176",
-      "court": "춘천지방법원",
-      "org": "채무자 망 최재원의 상속재산의 파산관재인 허종영",
-      "title": "부동산매각공고 (춘천지방법원 2023하단1234)",
-      "date": "2026.06.25",
-      "files": [
-        {
-          "id": "1782368304207_151824.pdf",
-          "name": "춘천지방법원 2023하단1234 부동산 매각 공고_양평군.pdf",
-          "url": "https://file.scourt.go.kr/AttachDownload",
-          "ext": "pdf",
-          "local": "1782368304207_151824.pdf",
-          "local_name": "1782368304207_151824.pdf",
-          "path": "011"
-        }
-      ],
-      "end_date": "2026.07.30",
-      "phone": "0332449113",
-      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34176&bub_cd=&searchWord=&searchOption="
-    },
-    {
-      "id": "34175",
-      "seq_id": "34175",
-      "court": "춘천지방법원",
-      "org": "채무자 망 최재원의 상속재산의 파산관재인 허종영",
-      "title": "부동산매각공고 (춘천지방법원 2023하단1234)",
-      "date": "2026.06.25",
-      "files": [],
-      "end_date": "2026.07.30",
-      "phone": "0332449113",
-      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34175&bub_cd=&searchWord=&searchOption="
-    },
-    {
-      "id": "34174",
-      "seq_id": "34174",
-      "court": "춘천지방법원",
-      "org": "채무자 망 최재원의 상속재산의 파산관재인 허종영",
-      "title": "부동산매각공고 (춘천지방법원 2023하단1234)",
-      "date": "2026.06.25",
-      "files": [
-        {
-          "id": "1782368270657_151750.pdf",
-          "name": "춘천지방법원 2023하단1234 부동산 매각 공고_여주시.pdf",
-          "url": "https://file.scourt.go.kr/AttachDownload",
-          "ext": "pdf",
-          "local": "1782368270657_151750.pdf",
-          "local_name": "1782368270657_151750.pdf",
-          "path": "011"
-        }
-      ],
-      "end_date": "2026.07.30",
-      "phone": "0332449113",
-      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34174&bub_cd=&searchWord=&searchOption="
     },
     {
       "id": "34172",
@@ -8945,28 +9109,6 @@
       "end_date": "2026.08.13",
       "phone": "02-533-7022",
       "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34161&bub_cd=&searchWord=&searchOption="
-    },
-    {
-      "id": "34155",
-      "seq_id": "34155",
-      "court": "수원회생법원",
-      "org": "채무자 우선문의 파산관재인 변호사 배상운",
-      "title": "부동산(토지) 지분 매각 공고",
-      "date": "2026.06.24",
-      "files": [
-        {
-          "id": "1782286723365_163843.pdf",
-          "name": "채무자 우선문 2026하단10694 부동산지분 매각에 관한 공고게재신청.pdf",
-          "url": "https://file.scourt.go.kr/AttachDownload",
-          "ext": "pdf",
-          "local": "1782286723365_163843.pdf",
-          "local_name": "1782286723365_163843.pdf",
-          "path": "011"
-        }
-      ],
-      "end_date": "2026.07.30",
-      "phone": "031-214-2003",
-      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=34155&bub_cd=&searchWord=&searchOption="
     },
     {
       "id": "34153",
@@ -10069,28 +10211,6 @@
       "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=33925&bub_cd=&searchWord=&searchOption="
     },
     {
-      "id": "33903",
-      "seq_id": "33903",
-      "court": "서울회생법원",
-      "org": "채무자 조윤현의 파산관재인 강신우",
-      "title": "부동산 매각 공고",
-      "date": "2026.06.11",
-      "files": [
-        {
-          "id": "1781141405302_103005.pdf",
-          "name": "2025하단9093 부동산 매각공고(2025하단9093 조윤현).pdf",
-          "url": "https://file.scourt.go.kr/AttachDownload",
-          "ext": "pdf",
-          "local": "1781141405302_103005.pdf",
-          "local_name": "1781141405302_103005.pdf",
-          "path": "011"
-        }
-      ],
-      "end_date": "2026.07.29",
-      "phone": "02-2135-1290",
-      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=33903&bub_cd=&searchWord=&searchOption="
-    },
-    {
       "id": "33902",
       "seq_id": "33902",
       "court": "서울회생법원",
@@ -10133,94 +10253,6 @@
       "end_date": "2026.08.10",
       "phone": "02-594-5662",
       "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=33901&bub_cd=&searchWord=&searchOption="
-    },
-    {
-      "id": "33891",
-      "seq_id": "33891",
-      "court": "서울회생법원",
-      "org": "채무자 주식회사 다음앤큐큐 파산관재인 변호사 윤문희",
-      "title": "재고자산(거위털 등 충전재) 일괄 매각공고",
-      "date": "2026.06.10",
-      "files": [
-        {
-          "id": "1781072418242_152018.pdf",
-          "name": "2026하합1343 재고자산(거위털 등 충전재) 매각공고문_2026하합1343 (주)다음앤큐큐.pdf",
-          "url": "https://file.scourt.go.kr/AttachDownload",
-          "ext": "pdf",
-          "local": "1781072418242_152018.pdf",
-          "local_name": "1781072418242_152018.pdf",
-          "path": "011"
-        }
-      ],
-      "end_date": "2026.07.29",
-      "phone": "02-786-8614",
-      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=33891&bub_cd=&searchWord=&searchOption="
-    },
-    {
-      "id": "33890",
-      "seq_id": "33890",
-      "court": "서울회생법원",
-      "org": "채무자 주식회사 다음앤큐큐 파산관재인 변호사 윤문희",
-      "title": "유형자산(노트북 등) 일괄 매각공고",
-      "date": "2026.06.10",
-      "files": [
-        {
-          "id": "1781072358298_151918.pdf",
-          "name": "2026하합1343 유형자산(노트북 등) 매각공고문_2026하합1343 (주)다음앤큐큐.pdf",
-          "url": "https://file.scourt.go.kr/AttachDownload",
-          "ext": "pdf",
-          "local": "1781072358298_151918.pdf",
-          "local_name": "1781072358298_151918.pdf",
-          "path": "011"
-        }
-      ],
-      "end_date": "2026.07.29",
-      "phone": "02-786-8614",
-      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=33890&bub_cd=&searchWord=&searchOption="
-    },
-    {
-      "id": "33889",
-      "seq_id": "33889",
-      "court": "서울회생법원",
-      "org": "채무자 주식회사 다음앤큐큐 파산관재인 변호사 윤문희",
-      "title": "자동차 매각공고",
-      "date": "2026.06.10",
-      "files": [
-        {
-          "id": "1781072300193_151820.pdf",
-          "name": "2026하합1343 자동차 매각공고문_ (주)다음앤큐큐.pdf",
-          "url": "https://file.scourt.go.kr/AttachDownload",
-          "ext": "pdf",
-          "local": "1781072300193_151820.pdf",
-          "local_name": "1781072300193_151820.pdf",
-          "path": "011"
-        }
-      ],
-      "end_date": "2026.07.29",
-      "phone": "02-786-8614",
-      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=33889&bub_cd=&searchWord=&searchOption="
-    },
-    {
-      "id": "33831",
-      "seq_id": "33831",
-      "court": "서울회생법원",
-      "org": "채무자 피상속인 망 이동군의 파산관재인 이만덕",
-      "title": "부동산 매각 공고",
-      "date": "2026.06.08",
-      "files": [
-        {
-          "id": "1780898988182_150948.pdf",
-          "name": "2026하단5743 부동산 매각공고안 등.pdf",
-          "url": "https://file.scourt.go.kr/AttachDownload",
-          "ext": "pdf",
-          "local": "1780898988182_150948.pdf",
-          "local_name": "1780898988182_150948.pdf",
-          "path": "011"
-        }
-      ],
-      "end_date": "2026.07.29",
-      "phone": "02-587-8122",
-      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=33831&bub_cd=&searchWord=&searchOption="
     },
     {
       "id": "33778",
@@ -10287,28 +10319,6 @@
       "end_date": "2026.08.10",
       "phone": "02-2135-1290",
       "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=33732&bub_cd=&searchWord=&searchOption="
-    },
-    {
-      "id": "33724",
-      "seq_id": "33724",
-      "court": "서울회생법원",
-      "org": "채무자 이아인의 파산관재인 권기일",
-      "title": "부동산 매각 공고",
-      "date": "2026.06.01",
-      "files": [
-        {
-          "id": "1780277762186_103602.pdf",
-          "name": "2026하단6177 부동산 매각공고 (채무자 이아인).pdf",
-          "url": "https://file.scourt.go.kr/AttachDownload",
-          "ext": "pdf",
-          "local": "1780277762186_103602.pdf",
-          "local_name": "1780277762186_103602.pdf",
-          "path": "011"
-        }
-      ],
-      "end_date": "2026.07.29",
-      "phone": "02-364-3607",
-      "detail_url": "https://www.scourt.go.kr/portal/notice/realestate/RealNoticeView.work?pageIndex=1&seq_id=33724&bub_cd=&searchWord=&searchOption="
     },
     {
       "id": "33620",
